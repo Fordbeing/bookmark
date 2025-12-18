@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: bookmark-backend
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/bookmark_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+      timeout: 3000ms
+  
+  # Elasticsearch配置
+  elasticsearch:
+    uris: http://localhost:9200
+      
+  # Jackson配置
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath*:/mapper/**/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: status
+      logic-delete-value: 0
+      logic-not-delete-value: 1
+
+# JWT配置
+jwt:
+  secret: bookmark-system-secret-key-2024-change-this-in-production-environment-must-be-at-least-256-bits
+  expiration: 604800000  # 7天 (毫秒)
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Knife4j配置
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# 日志配置
+logging:
+  level:
+    com.bookmark: debug
+    org.springframework.security: debug
