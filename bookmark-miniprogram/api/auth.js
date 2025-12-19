@@ -20,6 +20,22 @@ const loginAPI = (data) => {
 };
 
 /**
+ * 微信登录
+ * @param {Object} data - {code, nickName, avatarUrl}
+ */
+const wxLoginAPI = (data) => {
+    return post('/auth/wx-login', data);
+};
+
+/**
+ * 绑定手机号
+ * @param {Object} data - {phone, code}
+ */
+const bindPhoneAPI = (data) => {
+    return post('/auth/bind-phone', data);
+};
+
+/**
  * 获取当前用户信息
  */
 const getCurrentUserAPI = () => {
@@ -36,6 +52,8 @@ const logoutAPI = () => {
 module.exports = {
     registerAPI,
     loginAPI,
+    wxLoginAPI,
+    bindPhoneAPI,
     getCurrentUserAPI,
     logoutAPI
 };

@@ -9,8 +9,12 @@ USE bookmark_db;
 CREATE TABLE IF NOT EXISTS `user` (
   `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
   `username` VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-  `email` VARCHAR(100) NOT NULL UNIQUE COMMENT '邮箱',
-  `password` VARCHAR(255) NOT NULL COMMENT '密码(BCrypt加密)',
+  `email` VARCHAR(100) UNIQUE COMMENT '邮箱(微信登录可空)',
+  `password` VARCHAR(255) COMMENT '密码(BCrypt加密,微信登录可空)',
+  `phone` VARCHAR(20) UNIQUE COMMENT '手机号(用于账户绑定)',
+  `openid` VARCHAR(100) UNIQUE COMMENT '微信小程序OpenID',
+  `unionid` VARCHAR(100) COMMENT '微信UnionID(用于多平台)',
+  `login_type` TINYINT DEFAULT 1 COMMENT '登录方式: 1-邮箱 2-微信 3-手机',
   `avatar` VARCHAR(500) COMMENT '头像URL',
   `nickname` VARCHAR(50) COMMENT '昵称',
   `status` TINYINT DEFAULT 1 COMMENT '状态: 0-禁用 1-正常',
@@ -18,7 +22,9 @@ CREATE TABLE IF NOT EXISTS `user` (
   `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `last_login_time` DATETIME COMMENT '最后登录时间',
   INDEX idx_email (`email`),
-  INDEX idx_username (`username`)
+  INDEX idx_username (`username`),
+  INDEX idx_openid (`openid`),
+  INDEX idx_phone (`phone`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 书签表

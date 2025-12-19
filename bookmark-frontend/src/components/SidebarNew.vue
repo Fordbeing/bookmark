@@ -208,6 +208,37 @@
       </div>
     </nav>
 
+    <!-- 底部操作区域 -->
+    <div class="mt-auto px-3 py-4 border-t border-white/10">
+      <div v-if="!isCollapsed" class="space-y-1">
+        <button 
+          @click="emit('open-settings')"
+          class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200"
+        >
+          <span class="w-5 text-center">⚙️</span>
+          <span>设置</span>
+        </button>
+        <button 
+          @click="emit('open-profile')"
+          class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200"
+        >
+          <span class="w-5 text-center">👤</span>
+          <span>个人中心</span>
+        </button>
+      </div>
+      <div v-else class="space-y-1">
+        <button
+          @click="emit('open-settings')"
+          class="w-full p-3 rounded-xl flex justify-center hover:bg-white/10 transition-all"
+          title="设置"
+        ><span class="text-lg">⚙️</span></button>
+        <button
+          @click="emit('open-profile')"
+          class="w-full p-3 rounded-xl flex justify-center hover:bg-white/10 transition-all"
+          title="个人中心"
+        ><span class="text-lg">👤</span></button>
+      </div>
+    </div>
   </aside>
 </template>
 

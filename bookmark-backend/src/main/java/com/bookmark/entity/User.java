@@ -16,6 +16,14 @@ public class User {
 
     private String password;
 
+    private String phone; // 手机号(用于账户绑定)
+
+    private String openid; // 微信小程序OpenID
+
+    private String unionid; // 微信UnionID
+
+    private Integer loginType; // 登录方式: 1-邮箱 2-微信 3-手机
+
     private String avatar;
 
     private String nickname;

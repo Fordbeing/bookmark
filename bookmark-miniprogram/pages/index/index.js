@@ -15,7 +15,36 @@ Page({
         searchKeyword: '',
         currentFilter: 'all', // 'all', 'favorite', 'category'
         currentCategoryId: null,
-        filterTitle: '我的书签'
+        filterTitle: '我的书签',
+        // 通知功能
+        showNotifications: false,
+        notifications: [
+            {
+                id: 1,
+                icon: '🎉',
+                title: '欢迎使用书签管理',
+                content: '感谢您使用书签管理小程序，祝您使用愉快！',
+                time: '刚刚',
+                read: false
+            },
+            {
+                id: 2,
+                icon: '💡',
+                title: '小技巧',
+                content: '长按书签卡片可以快速进行操作哦',
+                time: '1小时前',
+                read: false
+            },
+            {
+                id: 3,
+                icon: '🔄',
+                title: '系统更新',
+                content: '我们优化了页面加载速度和交互体验',
+                time: '昨天',
+                read: true
+            }
+        ],
+        unreadCount: 2
     },
 
     onLoad() {
@@ -26,6 +55,26 @@ Page({
         // 每次显示页面时刷新数据
         if (wx.getStorageSync('token')) {
             this.loadData();
+
+            // 检查是否有从其他页面传递的分类筛选
+            const app = getApp();
+            if (app.globalData.filterCategory) {
+                const categoryId = app.globalData.filterCategory;
+                app.globalData.filterCategory = null; // 清除标记
+
+                // 延迟执行筛选，等待数据加载完成
+                setTimeout(() => {
+                    const category = this.data.categories.find(c => c.id === categoryId);
+                    if (category) {
+                        this.setData({
+                            currentFilter: 'category',
+                            currentCategoryId: categoryId,
+                            filterTitle: `${category.icon || '📁'} ${category.name}`
+                        });
+                        this.applyFilter();
+                    }
+                }, 300);
+            }
         }
     },
 
@@ -279,6 +328,39 @@ Page({
             this.loadData();
         } catch (error) {
             console.error('删除失败:', error);
+        }
+    },
+
+    // ========== 通知功能 ==========
+
+    // 切换通知弹窗
+    toggleNotifications() {
+        this.setData({
+            showNotifications: !this.data.showNotifications
+        });
+    },
+
+    // 标记全部已读
+    markAllAsRead() {
+        const notifications = this.data.notifications.map(n => ({
+            ...n,
+            read: true
+        }));
+        this.setData({
+            notifications,
+            unreadCount: 0
+        });
+        wx.showToast({ title: '已全部标记为已读', icon: 'success' });
+    },
+
+    // 点击通知项
+    handleNotificationClick(e) {
+        const index = e.currentTarget.dataset.index;
+        const notifications = [...this.data.notifications];
+        if (!notifications[index].read) {
+            notifications[index].read = true;
+            const unreadCount = notifications.filter(n => !n.read).length;
+            this.setData({ notifications, unreadCount });
         }
     }
 });

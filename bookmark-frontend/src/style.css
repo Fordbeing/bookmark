@@ -1,3 +1,88 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ========== 全局按钮按下态 ========== */
+
+/* 通用按钮按下效果 */
+button:active:not(:disabled),
+.el-button:active:not(.is-disabled) {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* 主按钮按下态 */
+.el-button--primary:active:not(.is-disabled) {
+  background-color: #1e40af !important;
+}
+
+/* 危险按钮按下态 */
+.el-button--danger:active:not(.is-disabled) {
+  background-color: #dc2626 !important;
+}
+
+/* 成功按钮按下态 */
+.el-button--success:active:not(.is-disabled) {
+  background-color: #16a34a !important;
+}
+
+/* ========== 统一 Focus 样式 ========== */
+
+/* 输入框 focus 光晕 */
+input:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* 按钮 focus 样式 */
+button:focus-visible,
+.el-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ========== 页面过渡动画 ========== */
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== 通用卡片效果 ========== */
+
+/* 卡片按下态 */
+.card-pressable:active {
+  transform: scale(0.98);
+}
+
+/* ========== 全局滚动条美化 ========== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

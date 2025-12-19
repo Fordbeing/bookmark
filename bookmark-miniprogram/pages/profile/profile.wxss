@@ -90,10 +90,18 @@
   align-items: center;
   padding: 28rpx 0;
   border-bottom: 1rpx solid #e5e7eb;
+  transition: background-color 0.15s ease;
 }
 
 .menu-item:last-child {
   border-bottom: none;
+}
+
+.menu-item-hover {
+  background-color: #f9fafb;
+  margin: 0 -24rpx;
+  padding-left: 24rpx;
+  padding-right: 24rpx;
 }
 
 .menu-icon {
@@ -138,6 +146,15 @@
 
 .btn-block {
   width: 100%;
+}
+
+.btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-danger-outline:active {
+  background-color: #fef2f2;
 }
 
 /* 页脚 */

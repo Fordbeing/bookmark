@@ -31,17 +31,17 @@
 
   <!-- 菜单列表 -->
   <view class="menu-list card">
-    <view class="menu-item" bindtap="goToIndex">
+    <view class="menu-item" bindtap="goToIndex" hover-class="menu-item-hover" hover-stay-time="100">
       <text class="menu-icon">📚</text>
       <text class="menu-text">我的书签</text>
       <text class="menu-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goToCategory">
+    <view class="menu-item" bindtap="goToCategory" hover-class="menu-item-hover" hover-stay-time="100">
       <text class="menu-icon">📁</text>
       <text class="menu-text">分类管理</text>
       <text class="menu-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goToTrash">
+    <view class="menu-item" bindtap="goToTrash" hover-class="menu-item-hover" hover-stay-time="100">
       <text class="menu-icon">🗑️</text>
       <text class="menu-text">回收站</text>
       <text class="menu-arrow">›</text>
@@ -50,12 +50,12 @@
 
   <!-- 关于 -->
   <view class="menu-list card">
-    <view class="menu-item">
+    <view class="menu-item" hover-class="menu-item-hover" hover-stay-time="100">
       <text class="menu-icon">ℹ️</text>
       <text class="menu-text">关于</text>
       <text class="menu-value">v1.0.0</text>
     </view>
-    <view class="menu-item" bindtap="clearCache">
+    <view class="menu-item" bindtap="clearCache" hover-class="menu-item-hover" hover-stay-time="100">
       <text class="menu-icon">🧹</text>
       <text class="menu-text">清除缓存</text>
       <text class="menu-arrow">›</text>

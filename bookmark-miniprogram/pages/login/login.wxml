@@ -31,6 +31,7 @@
         placeholder="输入您的邮箱" 
         value="{{loginForm.email}}"
         bindinput="onLoginEmailInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -42,6 +43,7 @@
         placeholder="输入您的密码" 
         value="{{loginForm.password}}"
         bindinput="onLoginPasswordInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -76,6 +78,7 @@
         placeholder="输入用户名" 
         value="{{registerForm.username}}"
         bindinput="onRegisterUsernameInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -87,6 +90,7 @@
         placeholder="输入您的邮箱" 
         value="{{registerForm.email}}"
         bindinput="onRegisterEmailInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -98,6 +102,7 @@
         placeholder="设置密码（至少6位）" 
         value="{{registerForm.password}}"
         bindinput="onRegisterPasswordInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -109,6 +114,7 @@
         placeholder="确认密码" 
         value="{{registerForm.confirmPassword}}"
         bindinput="onRegisterConfirmPasswordInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -120,6 +126,27 @@
     >
       {{loading ? '注册中...' : '创建账户'}}
     </button>
+  </view>
+
+  <!-- 底部分割线 -->
+  <view class="divider">
+    <view class="divider-line"></view>
+    <text class="divider-text">或者</text>
+    <view class="divider-line"></view>
+  </view>
+
+  <!-- 微信登录 -->
+  <view class="wx-login-section">
+    <button 
+      class="wx-login-btn" 
+      bindtap="handleWxLogin"
+      loading="{{wxLoading}}"
+      disabled="{{wxLoading}}"
+    >
+      <text class="wx-icon">✔</text>
+      <text>{{wxLoading ? '登录中...' : '微信一键登录'}}</text>
+    </button>
+    <text class="wx-login-tip">无需注册，快速登录</text>
   </view>
 
   <!-- 底部提示 -->

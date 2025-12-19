@@ -12,6 +12,7 @@
         placeholder="https://example.com" 
         value="{{form.url}}"
         bindinput="onUrlInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -24,6 +25,7 @@
         placeholder="书签标题" 
         value="{{form.title}}"
         bindinput="onTitleInput"
+        focus-class="input-focus"
       />
     </view>
 
@@ -36,6 +38,7 @@
         value="{{form.description}}"
         bindinput="onDescriptionInput"
         maxlength="500"
+        focus-class="textarea-focus"
       />
     </view>
 
@@ -77,6 +80,7 @@
             value="{{tagInput}}"
             bindinput="onTagInput"
             bindconfirm="addTag"
+            focus-class="input-focus"
           />
         </view>
       </view>

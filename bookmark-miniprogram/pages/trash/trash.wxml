@@ -34,6 +34,8 @@
       wx:for="{{bookmarks}}" 
       wx:key="id"
       class="trash-card card"
+      hover-class="trash-card-hover"
+      hover-stay-time="100"
     >
       <!-- 头部 -->
       <view class="card-header">

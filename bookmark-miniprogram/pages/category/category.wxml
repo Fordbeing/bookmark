@@ -27,6 +27,8 @@
       class="category-card card"
       data-id="{{item.id}}"
       bindtap="goToCategoryBookmarks"
+      hover-class="category-card-hover"
+      hover-stay-time="100"
     >
       <view class="category-info">
         <view class="category-icon" style="background-color: {{item.color || '#3b82f6'}}">

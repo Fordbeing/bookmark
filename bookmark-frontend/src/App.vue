@@ -124,7 +124,7 @@
               <div 
                 v-for="item in trashBookmarks" 
                 :key="item.id" 
-                class="relative bg-gray-100 rounded-xl p-6 shadow-md border border-gray-200"
+                class="relative bg-gray-100 rounded-xl p-6 shadow-md border border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
                 <div class="flex items-start gap-4 mb-4">
                   <div class="w-12 h-12 rounded-lg bg-gray-400 flex items-center justify-center flex-shrink-0 text-white text-lg font-bold">

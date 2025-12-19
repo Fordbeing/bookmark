@@ -4,6 +4,7 @@
   min-height: 100vh;
   background-color: #f3f4f6;
   padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -23,13 +24,22 @@
 
 /* 书签列表 */
 .bookmark-list {
-  height: calc(100vh - 180rpx);
+  height: calc(100vh - 200rpx - env(safe-area-inset-bottom));
 }
 
 /* 书签卡片 */
 .trash-card {
   margin-bottom: 20rpx;
   opacity: 0.9;
+  transition: all 0.15s ease;
+}
+
+.trash-card-hover {
+  background-color: #f9fafb;
+}
+
+.trash-card:active {
+  transform: scale(0.99);
 }
 
 .card-header {
@@ -97,6 +107,12 @@
   font-weight: 600;
   border-radius: 12rpx;
   border: none;
+  transition: all 0.15s ease;
+}
+
+.btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
 }
 
 .btn-primary {

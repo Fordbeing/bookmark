@@ -18,6 +18,11 @@
         bindtap="clearSearch"
       >✕</text>
     </view>
+    <!-- 通知按钮 -->
+    <view class="notification-btn" bindtap="toggleNotifications">
+      <text class="notification-icon">🔔</text>
+      <view class="notification-badge" wx:if="{{unreadCount > 0}}">{{unreadCount > 9 ? '9+' : unreadCount}}</view>
+    </view>
   </view>
 
   <!-- 快速添加 -->
@@ -45,6 +50,8 @@
     <view 
       class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" 
       bindtap="filterAll"
+      hover-class="filter-tab-hover"
+      hover-stay-time="100"
     >
       <text>全部</text>
       <text class="count">{{bookmarks.length}}</text>
@@ -52,6 +59,8 @@
     <view 
       class="filter-tab {{currentFilter === 'favorite' ? 'active' : ''}}" 
       bindtap="filterFavorite"
+      hover-class="filter-tab-hover"
+      hover-stay-time="100"
     >
       <text>⭐ 收藏</text>
     </view>
@@ -61,6 +70,8 @@
       class="filter-tab {{currentFilter === 'category' && currentCategoryId === item.id ? 'active' : ''}}"
       data-id="{{item.id}}"
       bindtap="filterByCategory"
+      hover-class="filter-tab-hover"
+      hover-stay-time="100"
     >
       <text>{{item.icon || '📁'}} {{item.name}}</text>
       <text class="count">{{item.count || 0}}</text>
@@ -103,6 +114,8 @@
       data-url="{{item.url}}"
       bindtap="handleCardTap"
       bindlongpress="showActionMenu"
+      hover-class="bookmark-card-hover"
+      hover-stay-time="100"
     >
       <!-- 头部 -->
       <view class="card-header">
@@ -146,5 +159,45 @@
   <!-- 浮动添加按钮 -->
   <view class="fab" bindtap="goToAddPage">
     <text>+</text>
+  </view>
+
+  <!-- 通知弹窗 -->
+  <view class="notification-modal" wx:if="{{showNotifications}}">
+    <!-- 遮罩层 -->
+    <view class="notification-mask" bindtap="toggleNotifications"></view>
+    <!-- 弹窗内容 -->
+    <view class="notification-content">
+      <!-- 头部 -->
+      <view class="notification-header">
+        <text class="notification-title">消息通知</text>
+        <text class="notification-mark-read" wx:if="{{unreadCount > 0}}" bindtap="markAllAsRead">全部已读</text>
+      </view>
+      <!-- 列表 -->
+      <scroll-view class="notification-list" scroll-y>
+        <view wx:if="{{notifications.length === 0}}" class="notification-empty">
+          <text class="empty-icon">🔔</text>
+          <text class="empty-text">暂无通知</text>
+        </view>
+        <view 
+          wx:for="{{notifications}}" 
+          wx:key="id" 
+          class="notification-item {{!item.read ? 'unread' : ''}}"
+          bindtap="handleNotificationClick"
+          data-index="{{index}}"
+        >
+          <text class="item-icon">{{item.icon}}</text>
+          <view class="item-content">
+            <text class="item-title">{{item.title}}</text>
+            <text class="item-desc">{{item.content}}</text>
+            <text class="item-time">{{item.time}}</text>
+          </view>
+          <view class="item-dot" wx:if="{{!item.read}}"></view>
+        </view>
+      </scroll-view>
+      <!-- 底部 -->
+      <view class="notification-footer" bindtap="toggleNotifications">
+        <text>关闭</text>
+      </view>
+    </view>
   </view>
 </view>

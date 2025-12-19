@@ -1,10 +1,11 @@
 // pages/login/login.js
-const { loginAPI, registerAPI } = require('../../api/auth');
+const { loginAPI, registerAPI, wxLoginAPI } = require('../../api/auth');
 
 Page({
     data: {
         isLogin: true,
         loading: false,
+        wxLoading: false,
         loginForm: {
             email: '',
             password: '',
@@ -149,6 +150,51 @@ Page({
             wx.navigateBack();
         } else {
             wx.switchTab({ url: '/pages/index/index' });
+        }
+    },
+
+    // 微信一键登录
+    async handleWxLogin() {
+        this.setData({ wxLoading: true });
+
+        try {
+            // 1. 调用wx.login获取code
+            const loginRes = await new Promise((resolve, reject) => {
+                wx.login({
+                    success: resolve,
+                    fail: reject
+                });
+            });
+
+            if (!loginRes.code) {
+                wx.showToast({ title: '微信登录失败', icon: 'none' });
+                return;
+            }
+
+            // 2. 调用后端微信登录接口
+            const result = await wxLoginAPI({
+                code: loginRes.code,
+                nickName: '微信用户',
+                avatarUrl: ''
+            });
+
+            if (result.data && result.data.token) {
+                // 保存登录信息
+                const app = getApp();
+                app.setLoginInfo(result.data.token, result.data);
+
+                wx.showToast({ title: '登录成功', icon: 'success' });
+
+                // 跳转首页
+                setTimeout(() => {
+                    this.navigateBack();
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('微信登录失败:', error);
+            wx.showToast({ title: '登录失败', icon: 'none' });
+        } finally {
+            this.setData({ wxLoading: false });
         }
     }
 });

@@ -4,6 +4,7 @@
   min-height: 100vh;
   background-color: #f3f4f6;
   padding: 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -46,11 +47,13 @@
   font-size: 28rpx;
   background-color: #f9fafb;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-.input:focus {
+.input-focus {
   border-color: #2563eb;
   background-color: #ffffff;
+  box-shadow: 0 0 0 4rpx rgba(37, 99, 235, 0.1);
 }
 
 .textarea {
@@ -62,6 +65,13 @@
   font-size: 28rpx;
   background-color: #f9fafb;
   box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.textarea-focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4rpx rgba(37, 99, 235, 0.1);
 }
 
 /* 选择器 */
@@ -150,6 +160,21 @@
   font-weight: 600;
   border-radius: 12rpx;
   border: none;
+  transition: all 0.15s ease;
+}
+
+.btn:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-primary:active {
+  background-color: #1e40af;
 }
 
 .btn-primary {

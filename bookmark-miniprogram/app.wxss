@@ -269,3 +269,115 @@ page {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* ========== 点击反馈样式 ========== */
+
+/* 按钮按下态 */
+.btn:active {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+.btn-primary:active {
+  background-color: var(--primary-dark);
+}
+
+.btn-secondary:active {
+  background-color: #d1d5db;
+}
+
+.btn-danger:active {
+  background-color: #dc2626;
+}
+
+.btn-success:active {
+  background-color: #16a34a;
+}
+
+.btn-outline:active {
+  background-color: var(--bg-tertiary);
+}
+
+/* 卡片点击反馈 */
+.card-hover {
+  background-color: #f9fafb;
+}
+
+.card-active {
+  background-color: #f3f4f6;
+  transform: scale(0.99);
+}
+
+/* 操作按钮点击反馈 */
+.action-btn-hover {
+  background-color: #e5e7eb;
+}
+
+/* 菜单项点击反馈 */
+.menu-item-hover {
+  background-color: #f9fafb;
+}
+
+/* ========== 过渡动画 ========== */
+
+/* 通用过渡 */
+.transition {
+  transition: all 0.2s ease;
+}
+
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+.transition-colors {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.transition-transform {
+  transition: transform 0.2s ease;
+}
+
+/* 弹窗动画 */
+.modal-fade-in {
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+.modal-fade-out {
+  animation: modalFadeOut 0.2s ease-in;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ========== 触控优化 ========== */
+
+/* 增大触控区域 */
+.touch-target {
+  min-height: 88rpx;
+  min-width: 88rpx;
+}
+
+/* 可点击元素基础样式 */
+.clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
