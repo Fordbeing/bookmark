@@ -218,26 +218,102 @@
 
       <!-- 关于 -->
       <el-tab-pane label="ℹ️ 关于" name="about">
-        <div class="space-y-4 text-center">
-          <div class="text-4xl">🔖</div>
-          <h2 class="text-2xl font-bold">书签管理工具</h2>
-          <p class="text-gray-600">v1.0.0</p>
-
-          <el-divider />
-
-          <div class="text-left space-y-2">
-            <p><strong>功能：</strong> 智能管理和组织你的书签</p>
-            <p><strong>开发者：</strong> Bookmark Team</p>
-            <p><strong>许可证：</strong> MIT</p>
-            <p><strong>更新日期：</strong> 2024-01-01</p>
+        <div class="space-y-6">
+          <!-- 品牌区 -->
+          <div class="text-center bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl">
+            <div class="text-5xl mb-3">🔖</div>
+            <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">书签管理工具</h2>
+            <p class="text-gray-500 mt-1">Bookmark Manager Pro</p>
+            <div class="inline-block mt-3 px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              v1.0.0 正式版
+            </div>
           </div>
 
-          <el-divider />
+          <!-- 功能亮点 -->
+          <div class="bg-gray-50 p-5 rounded-xl">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span>✨</span> 功能亮点
+            </h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                <span class="text-2xl">🌐</span>
+                <div>
+                  <div class="font-medium text-gray-800">多端同步</div>
+                  <div class="text-xs text-gray-500">网页版 + 小程序</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                <span class="text-2xl">🔍</span>
+                <div>
+                  <div class="font-medium text-gray-800">全文搜索</div>
+                  <div class="text-xs text-gray-500">Elasticsearch 驱动</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                <span class="text-2xl">📁</span>
+                <div>
+                  <div class="font-medium text-gray-800">分类管理</div>
+                  <div class="text-xs text-gray-500">自定义分类 + 标签</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
+                <span class="text-2xl">📥</span>
+                <div>
+                  <div class="font-medium text-gray-800">一键导入</div>
+                  <div class="text-xs text-gray-500">支持 Chrome/Edge</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <div class="space-y-2">
-            <el-button link>访问官网</el-button>
-            <el-button link>报告问题</el-button>
-            <el-button link>隐私政策</el-button>
+          <!-- 使用技巧 -->
+          <div class="bg-yellow-50 p-5 rounded-xl">
+            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span>💡</span> 使用技巧
+            </h3>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li class="flex items-start gap-2">
+                <span class="text-yellow-500">●</span>
+                <span>粘贴网址后点击「快速添加」自动获取标题</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-yellow-500">●</span>
+                <span>点击书签卡片直接打开链接，右键更多操作</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-yellow-500">●</span>
+                <span>使用搜索框可搜索标题、网址和描述</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-yellow-500">●</span>
+                <span>微信小程序绑定手机号可实现数据互通</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 版本信息 -->
+          <div class="flex justify-between items-center text-sm text-gray-500 px-2">
+            <div>
+              <span>开发者：</span>
+              <span class="font-medium text-gray-700">Bookmark Team</span>
+            </div>
+            <div>
+              <span>更新日期：</span>
+              <span class="font-medium text-gray-700">2024-12</span>
+            </div>
+          </div>
+
+          <!-- 链接 -->
+          <div class="flex justify-center gap-4 pt-2">
+            <el-button link type="primary">
+              <el-icon class="mr-1"><Link /></el-icon>官方网站
+            </el-button>
+            <el-button link type="primary">
+              <el-icon class="mr-1"><ChatDotRound /></el-icon>反馈问题
+            </el-button>
+            <el-button link type="primary">
+              <el-icon class="mr-1"><Document /></el-icon>隐私政策
+            </el-button>
           </div>
         </div>
       </el-tab-pane>
@@ -259,7 +335,7 @@
 <script setup>
 import { ref, reactive, watch, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { UploadFilled, Download, Upload, Document } from '@element-plus/icons-vue';
+import { UploadFilled, Download, Upload, Document, Link, ChatDotRound } from '@element-plus/icons-vue';
 import { getTagListAPI, createTagAPI, updateTagAPI, deleteTagAPI } from '../api/tag';
 import { getSettingsAPI, updateSettingsAPI } from '../api/settings';
 import { downloadExportData, importBookmarksFileAPI, clearAllDataAPI } from '../api/dataManagement';

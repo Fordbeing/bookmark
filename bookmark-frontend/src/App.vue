@@ -307,6 +307,7 @@
       <ProfilePage 
         v-model="isProfileVisible"
         :bookmarks="bookmarks"
+        :categories="categories"
         @logout="handleLogout"
       />
 
@@ -391,6 +392,7 @@ const sidebarMargin = computed(() => {
 });
 // 使用真实API的书签数据
 const bookmarks = ref([]);
+const categories = ref([]);
 const currentFilter = ref({ type: 'all', value: null }); // 'all', 'category', 'favorite'
 
 // 过滤和排序书签
@@ -572,6 +574,11 @@ const fetchList = async () => {
     const result = await getBookmarkListAPI({ page: 1, size: 100 });
     if (result.data && result.data.list) {
       bookmarks.value = result.data.list;
+    }
+    // 同时加载分类列表
+    const categoryResult = await getCategoryListAPI();
+    if (categoryResult.data) {
+      categories.value = categoryResult.data;
     }
   } catch (error) {
     console.error('获取书签列表失败:', error);

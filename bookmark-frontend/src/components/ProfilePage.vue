@@ -20,19 +20,48 @@
         <el-button size="small" @click="isEditing = true">编辑</el-button>
       </div>
 
-      <!-- 统计卡片 -->
-      <div class="grid grid-cols-3 gap-3 mb-5">
-        <div class="text-center p-3 bg-blue-50 rounded-xl">
-          <div class="text-xl font-bold text-blue-600">{{ stats.bookmarkCount }}</div>
-          <div class="text-xs text-gray-500">书签</div>
+      <!-- 使用情况 -->
+      <div class="space-y-4 mb-5">
+        <h3 class="text-sm font-medium text-gray-700 flex items-center gap-2">
+          📊 使用情况
+        </h3>
+        <!-- 书签用量 -->
+        <div class="bg-blue-50 p-4 rounded-xl">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-700">📚 书签</span>
+            <span class="text-sm font-medium" :class="stats.bookmarkCount >= 50 ? 'text-red-600' : 'text-blue-600'">
+              {{ stats.bookmarkCount }}/50
+            </span>
+          </div>
+          <el-progress 
+            :percentage="Math.min(stats.bookmarkCount / 50 * 100, 100)" 
+            :stroke-width="10"
+            :color="stats.bookmarkCount >= 45 ? '#ef4444' : stats.bookmarkCount >= 35 ? '#f59e0b' : '#3b82f6'"
+            :show-text="false"
+          />
+          <p v-if="stats.bookmarkCount >= 45" class="text-xs text-red-500 mt-2">
+            ⚠️ 已接近上限，请考虑清理
+          </p>
         </div>
-        <div class="text-center p-3 bg-green-50 rounded-xl">
-          <div class="text-xl font-bold text-green-600">{{ stats.categoryCount }}</div>
-          <div class="text-xs text-gray-500">分类</div>
+        <!-- 分类用量 -->
+        <div class="bg-green-50 p-4 rounded-xl">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-700">📁 分类</span>
+            <span class="text-sm font-medium" :class="stats.categoryCount >= 7 ? 'text-red-600' : 'text-green-600'">
+              {{ stats.categoryCount }}/7
+            </span>
+          </div>
+          <el-progress 
+            :percentage="Math.min(stats.categoryCount / 7 * 100, 100)" 
+            :stroke-width="10"
+            :color="stats.categoryCount >= 6 ? '#ef4444' : stats.categoryCount >= 5 ? '#f59e0b' : '#22c55e'"
+            :show-text="false"
+          />
         </div>
-        <div class="text-center p-3 bg-amber-50 rounded-xl">
-          <div class="text-xl font-bold text-amber-600">{{ stats.favoriteCount }}</div>
-          <div class="text-xs text-gray-500">收藏</div>
+        <!-- 收藏统计 -->
+        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 rounded-xl">
+          <span class="text-sm text-gray-700">⭐ 已收藏</span>
+          <span class="text-sm font-medium text-amber-600">{{ stats.favoriteCount }} 个书签</span>
         </div>
       </div>
 
@@ -81,6 +110,10 @@ const props = defineProps({
   bookmarks: {
     type: Array,
     default: () => []
+  },
+  categories: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -117,7 +150,7 @@ const loadUser = () => {
 const stats = computed(() => {
   return {
     bookmarkCount: props.bookmarks.length,
-    categoryCount: new Set(props.bookmarks.map(b => b.categoryId).filter(Boolean)).size,
+    categoryCount: props.categories.length,
     favoriteCount: props.bookmarks.filter(b => b.isFavorite === 1).length
   };
 });

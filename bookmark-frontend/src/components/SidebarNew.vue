@@ -119,21 +119,38 @@
           >+</button>
         </div>
         <div v-show="categoryExpanded" class="space-y-0.5 mt-1">
-          <button 
+          <div 
             v-for="category in categories" 
             :key="category.id"
-            @click="selectCategory(category.id)"
-            :class="[
-              'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-              selectedCategoryId === category.id && currentFilter === 'category'
-                ? 'bg-white/20 text-white shadow-lg' 
-                : 'text-white/80 hover:bg-white/10 hover:text-white'
-            ]"
+            class="group relative"
           >
-            <span class="w-5 text-center">{{ category.icon || '📁' }}</span>
-            <span class="flex-1 text-left truncate">{{ category.name }}</span>
-            <span class="text-xs bg-white/15 px-2 py-0.5 rounded-full">{{ category.count || 0 }}</span>
-          </button>
+            <button 
+              @click="selectCategory(category.id)"
+              :class="[
+                'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                selectedCategoryId === category.id && currentFilter === 'category'
+                  ? 'bg-white/20 text-white shadow-lg' 
+                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+              ]"
+            >
+              <span class="w-5 text-center">{{ category.icon || '📁' }}</span>
+              <span class="flex-1 text-left truncate">{{ category.name }}</span>
+              <span class="text-xs bg-white/15 px-2 py-0.5 rounded-full group-hover:hidden">{{ category.count || 0 }}</span>
+            </button>
+            <!-- 操作按钮 - 悬停显示 -->
+            <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1">
+              <button 
+                @click.stop="handleEditCategory(category)"
+                class="w-6 h-6 flex items-center justify-center rounded-md bg-white/20 hover:bg-white/30 text-white text-xs transition-all"
+                title="编辑分类"
+              >✏️</button>
+              <button 
+                @click.stop="handleDeleteCategory(category)"
+                class="w-6 h-6 flex items-center justify-center rounded-md bg-red-500/50 hover:bg-red-500/70 text-white text-xs transition-all"
+                title="删除分类"
+              >🗑️</button>
+            </div>
+          </div>
           <div v-if="categories.length === 0" class="px-4 py-3 text-sm text-white/40 text-center">
             暂无分类
           </div>
@@ -244,9 +261,10 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
-import { getCategoryListAPI } from '../api/category';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { getCategoryListAPI, updateCategoryAPI, deleteCategoryAPI } from '../api/category';
 
-const emit = defineEmits(['open-settings', 'open-profile', 'category-select', 'filter-favorites', 'filter-trash', 'add-category']);
+const emit = defineEmits(['open-settings', 'open-profile', 'category-select', 'filter-favorites', 'filter-trash', 'add-category', 'category-deleted']);
 
 // 定义props以接收书签数据
 const props = defineProps({
@@ -358,6 +376,88 @@ watch(() => customColorTo.value, (newVal) => {
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+};
+
+// 编辑分类
+const handleEditCategory = async (category) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新的分类名称', '编辑分类', {
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+      inputValue: category.name,
+      inputValidator: (val) => {
+        if (!val || !val.trim()) return '分类名称不能为空';
+        return true;
+      }
+    });
+    
+    if (value && value.trim() !== category.name) {
+      await updateCategoryAPI(category.id, { 
+        name: value.trim(),
+        icon: category.icon
+      });
+      ElMessage.success('分类已更新');
+      await loadCategories();
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('编辑分类失败:', error);
+      ElMessage.error('编辑分类失败');
+    }
+  }
+};
+
+// 删除分类
+const handleDeleteCategory = async (category) => {
+  // 检查是否有书签使用此分类
+  const bookmarkCount = props.bookmarks.filter(b => b.categoryId === category.id).length;
+  
+  if (bookmarkCount > 0) {
+    try {
+      await ElMessageBox.confirm(
+        `该分类下有 ${bookmarkCount} 个书签，删除分类后这些书签将变为"未分类"。确定要继续吗？`,
+        '警告',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      );
+    } catch {
+      return; // 用户取消
+    }
+  } else {
+    try {
+      await ElMessageBox.confirm(
+        `确定要删除分类"${category.name}"吗？`,
+        '确认删除',
+        {
+          confirmButtonText: '删除',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      );
+    } catch {
+      return; // 用户取消
+    }
+  }
+
+  try {
+    await deleteCategoryAPI(category.id);
+    ElMessage.success('分类已删除');
+    
+    // 如果当前选中的是被删除的分类，切换到全部
+    if (selectedCategoryId.value === category.id) {
+      showAllBookmarks();
+    }
+    
+    await loadCategories();
+    // 通知父组件刷新书签列表
+    emit('category-deleted', category.id);
+  } catch (error) {
+    console.error('删除分类失败:', error);
+    ElMessage.error('删除分类失败');
+  }
 };
 
 defineExpose({
