@@ -1,120 +1,61 @@
 <!--pages/add/add.wxml-->
-<view class="add-page">
-  <view class="form-container">
-    <view class="form-title">{{isEdit ? '编辑书签' : '添加书签'}}</view>
+<view class="page">
+  <view class="header">
+    <text class="title">{{isEdit ? '编辑书签' : '添加书签'}}</text>
+  </view>
 
+  <view class="form">
     <!-- URL -->
-    <view class="input-group">
-      <text class="input-label">网址 <text class="required">*</text></text>
-      <input 
-        class="input" 
-        type="text" 
-        placeholder="https://example.com" 
-        value="{{form.url}}"
-        bindinput="onUrlInput"
-        focus-class="input-focus"
-      />
+    <view class="field">
+      <text class="label">网址 <text class="req">*</text></text>
+      <input class="input" placeholder="https://..." value="{{form.url}}" bindinput="onUrlInput" />
     </view>
 
     <!-- 标题 -->
-    <view class="input-group">
-      <text class="input-label">标题 <text class="required">*</text></text>
-      <input 
-        class="input" 
-        type="text" 
-        placeholder="书签标题" 
-        value="{{form.title}}"
-        bindinput="onTitleInput"
-        focus-class="input-focus"
-      />
+    <view class="field">
+      <text class="label">标题 <text class="req">*</text></text>
+      <input class="input" placeholder="书签标题" value="{{form.title}}" bindinput="onTitleInput" />
     </view>
 
-    <!-- 描述 -->
-    <view class="input-group">
-      <text class="input-label">描述</text>
-      <textarea 
-        class="textarea" 
-        placeholder="书签描述（可选）" 
-        value="{{form.description}}"
-        bindinput="onDescriptionInput"
-        maxlength="500"
-        focus-class="textarea-focus"
-      />
-    </view>
-
-    <!-- 分类 -->
-    <view class="input-group">
-      <text class="input-label">分类</text>
-      <picker 
-        mode="selector" 
-        range="{{categoryOptions}}" 
-        range-key="name"
-        value="{{selectedCategoryIndex}}"
-        bindchange="onCategoryChange"
-      >
-        <view class="picker">
-          <text>{{selectedCategoryName}}</text>
-          <text class="arrow">›</text>
-        </view>
-      </picker>
-    </view>
-
-    <!-- 标签 -->
-    <view class="input-group">
-      <text class="input-label">标签</text>
-      <view class="tags-container">
-        <view class="tag-list">
-          <view 
-            class="tag" 
-            wx:for="{{form.tags}}" 
-            wx:key="*this"
-          >
-            <text>{{item}}</text>
-            <text class="tag-remove" data-index="{{index}}" bindtap="removeTag">×</text>
+    <!-- 分类 + 收藏 一行 -->
+    <view class="row">
+      <view class="field flex-1">
+        <text class="label">分类</text>
+        <picker mode="selector" range="{{categoryOptions}}" range-key="name" value="{{selectedCategoryIndex}}" bindchange="onCategoryChange">
+          <view class="picker">
+            <text>{{selectedCategoryName}}</text>
+            <text class="arrow">›</text>
           </view>
-        </view>
-        <view class="tag-input-wrapper">
-          <input 
-            class="tag-input" 
-            placeholder="添加标签，回车确认" 
-            value="{{tagInput}}"
-            bindinput="onTagInput"
-            bindconfirm="addTag"
-            focus-class="input-focus"
-          />
-        </view>
+        </picker>
+      </view>
+      <view class="switch-box">
+        <text class="label">收藏</text>
+        <switch checked="{{form.isFavorite}}" bindchange="onFavoriteChange" color="#6366f1" />
       </view>
     </view>
 
-    <!-- 收藏 -->
-    <view class="switch-group">
-      <text class="switch-label">添加到收藏</text>
-      <switch 
-        checked="{{form.isFavorite}}" 
-        bindchange="onFavoriteChange"
-        color="#2563eb"
-      />
+    <!-- 描述 (缩小) -->
+    <view class="field">
+      <text class="label">描述</text>
+      <textarea class="textarea" placeholder="书签描述（可选）" value="{{form.description}}" bindinput="onDescriptionInput" maxlength="200" />
     </view>
 
-    <!-- 按钮 -->
-    <view class="btn-group">
-      <button 
-        class="btn btn-primary btn-block" 
-        bindtap="handleSubmit"
-        loading="{{loading}}"
-        disabled="{{loading}}"
-      >
-        {{loading ? '保存中...' : (isEdit ? '保存修改' : '添加书签')}}
-      </button>
-      <button 
-        class="btn btn-secondary btn-block mt-md" 
-        bindtap="goBack"
-      >取消</button>
-      <button 
-        wx:if="{{isEdit}}"
-        class="btn btn-danger btn-block mt-md" 
-        bindtap="handleDelete"
-      >删除书签</button>
+    <!-- 标签 -->
+    <view class="field">
+      <text class="label">标签</text>
+      <view class="tags-box">
+        <view class="tag" wx:for="{{form.tags}}" wx:key="*this">
+          {{item}} <text class="tag-x" data-index="{{index}}" bindtap="removeTag">×</text>
+        </view>
+        <input class="tag-input" placeholder="+ 添加标签" value="{{tagInput}}" bindinput="onTagInput" bindconfirm="addTag" />
+      </view>
     </view>
+  </view>
+
+  <!-- 按钮 -->
+  <view class="btns">
+    <view class="btn-save" bindtap="handleSubmit">{{loading ? '保存中...' : '保存'}}</view>
+    <view class="btn-cancel" bindtap="goBack">取消</view>
+    <view class="btn-delete" wx:if="{{isEdit}}" bindtap="handleDelete">删除</view>
   </view>
 </view>

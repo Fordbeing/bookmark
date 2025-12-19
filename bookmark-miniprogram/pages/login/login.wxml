@@ -1,9 +1,11 @@
 <!--pages/login/login.wxml-->
 <view class="login-page">
-  <!-- 顶部装饰 -->
+  <!-- 顶部装饰 - 图标和标题同行 -->
   <view class="header">
-    <view class="logo">🔖</view>
-    <text class="title">书签管理</text>
+    <view class="brand">
+      <text class="logo">🔖</text>
+      <text class="title">书签管理</text>
+    </view>
     <text class="subtitle">Bookmark Manager</text>
   </view>
 
@@ -20,9 +22,7 @@
   </view>
 
   <!-- 登录表单 -->
-  <view class="form-container" wx:if="{{isLogin}}">
-    <view class="form-title">欢迎回来</view>
-    
+  <view class="form-box" wx:if="{{isLogin}}">
     <view class="input-group">
       <text class="input-label">邮箱</text>
       <input 
@@ -31,7 +31,6 @@
         placeholder="输入您的邮箱" 
         value="{{loginForm.email}}"
         bindinput="onLoginEmailInput"
-        focus-class="input-focus"
       />
     </view>
 
@@ -43,33 +42,36 @@
         placeholder="输入您的密码" 
         value="{{loginForm.password}}"
         bindinput="onLoginPasswordInput"
-        focus-class="input-focus"
       />
     </view>
 
-    <view class="remember-me">
+    <view class="remember-row">
       <switch 
         checked="{{loginForm.remember}}" 
         bindchange="onRememberChange"
-        color="#2563eb"
+        color="#6366f1"
       />
       <text>记住我</text>
     </view>
 
-    <button 
-      class="btn btn-primary btn-block" 
-      bindtap="handleLogin"
-      loading="{{loading}}"
-      disabled="{{loading}}"
-    >
-      {{loading ? '登录中...' : '登录'}}
-    </button>
+    <view class="btn-row">
+      <button 
+        class="btn-login" 
+        bindtap="handleLogin"
+        loading="{{loading}}"
+        disabled="{{loading}}"
+      >{{loading ? '登录中...' : '登录'}}</button>
+      <button 
+        class="btn-wx" 
+        bindtap="handleWxLogin"
+        loading="{{wxLoading}}"
+        disabled="{{wxLoading}}"
+      >🟢 微信</button>
+    </view>
   </view>
 
   <!-- 注册表单 -->
-  <view class="form-container" wx:else>
-    <view class="form-title">创建账户</view>
-    
+  <view class="form-box" wx:else>
     <view class="input-group">
       <text class="input-label">用户名</text>
       <input 
@@ -78,7 +80,6 @@
         placeholder="输入用户名" 
         value="{{registerForm.username}}"
         bindinput="onRegisterUsernameInput"
-        focus-class="input-focus"
       />
     </view>
 
@@ -90,7 +91,6 @@
         placeholder="输入您的邮箱" 
         value="{{registerForm.email}}"
         bindinput="onRegisterEmailInput"
-        focus-class="input-focus"
       />
     </view>
 
@@ -102,7 +102,6 @@
         placeholder="设置密码（至少6位）" 
         value="{{registerForm.password}}"
         bindinput="onRegisterPasswordInput"
-        focus-class="input-focus"
       />
     </view>
 
@@ -114,43 +113,19 @@
         placeholder="确认密码" 
         value="{{registerForm.confirmPassword}}"
         bindinput="onRegisterConfirmPasswordInput"
-        focus-class="input-focus"
       />
     </view>
 
     <button 
-      class="btn btn-primary btn-block" 
+      class="btn-register" 
       bindtap="handleRegister"
       loading="{{loading}}"
       disabled="{{loading}}"
-    >
-      {{loading ? '注册中...' : '创建账户'}}
-    </button>
-  </view>
-
-  <!-- 底部分割线 -->
-  <view class="divider">
-    <view class="divider-line"></view>
-    <text class="divider-text">或者</text>
-    <view class="divider-line"></view>
-  </view>
-
-  <!-- 微信登录 -->
-  <view class="wx-login-section">
-    <button 
-      class="wx-login-btn" 
-      bindtap="handleWxLogin"
-      loading="{{wxLoading}}"
-      disabled="{{wxLoading}}"
-    >
-      <text class="wx-icon">✔</text>
-      <text>{{wxLoading ? '登录中...' : '微信一键登录'}}</text>
-    </button>
-    <text class="wx-login-tip">无需注册，快速登录</text>
+    >{{loading ? '注册中...' : '创建账户'}}</button>
   </view>
 
   <!-- 底部提示 -->
   <view class="footer">
-    <text>{{isLogin ? '没有账户？点击注册' : '已有账户？点击登录'}}</text>
+    <text>{{isLogin ? '没有账户？点击上方注册' : '已有账户？点击上方登录'}}</text>
   </view>
 </view>

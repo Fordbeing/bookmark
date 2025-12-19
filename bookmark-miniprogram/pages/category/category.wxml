@@ -1,73 +1,77 @@
 <!--pages/category/category.wxml-->
-<view class="category-page">
-  <!-- 标题栏 -->
-  <view class="header-bar">
+<view class="page">
+  <!-- 固定头部 -->
+  <view class="header">
     <text class="title">分类管理</text>
-    <button class="btn btn-primary btn-sm" bindtap="showAddModal">+ 添加分类</button>
+    <view class="add-btn" bindtap="showAddModal">+ 新建</view>
   </view>
 
-  <!-- 分类列表 -->
-  <view class="category-list">
+  <!-- 可滚动列表区域 -->
+  <scroll-view class="list" scroll-y>
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{!loading && categories.length === 0}}">
-      <text class="icon">📁</text>
-      <text class="text">暂无分类</text>
-      <button class="btn btn-primary btn-sm mt-md" bindtap="showAddModal">创建分类</button>
+    <view class="empty" wx:if="{{!loading && categories.length === 0}}">
+      <text class="empty-icon">📁</text>
+      <text class="empty-text">暂无分类</text>
+      <view class="empty-btn" bindtap="showAddModal">创建分类</view>
     </view>
 
     <!-- 加载中 -->
-    <view class="loading" wx:if="{{loading}}">
-      <text>加载中...</text>
-    </view>
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
 
-    <!-- 分类卡片 -->
+    <!-- 分类项 - 可滑动删除 -->
     <view 
       wx:for="{{categories}}" 
       wx:key="id"
-      class="category-card card"
-      data-id="{{item.id}}"
-      bindtap="goToCategoryBookmarks"
-      hover-class="category-card-hover"
-      hover-stay-time="100"
+      class="swipe-container"
     >
-      <view class="category-info">
-        <view class="category-icon" style="background-color: {{item.color || '#3b82f6'}}">
-          <text>{{item.icon || '📁'}}</text>
-        </view>
-        <view class="category-detail">
-          <text class="category-name">{{item.name}}</text>
-          <text class="category-count">{{item.count || 0}} 个书签</text>
+      <view 
+        class="swipe-content"
+        style="transform: translateX({{item.offsetX || 0}}rpx)"
+        data-id="{{item.id}}"
+        data-index="{{index}}"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+      >
+        <view class="item" data-id="{{item.id}}" bindtap="goToCategoryBookmarks">
+          <view class="item-icon">{{item.icon || '📁'}}</view>
+          <view class="item-main">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-count">{{item.count || 0}} 个书签</view>
+          </view>
+          <view class="item-arrow">›</view>
         </view>
       </view>
-      <view class="category-actions">
-        <button class="action-btn" data-id="{{item.id}}" catchtap="editCategory">✏️</button>
-        <button class="action-btn danger" data-id="{{item.id}}" catchtap="deleteCategory">🗑️</button>
+      <!-- 操作按钮 -->
+      <view class="swipe-actions">
+        <view class="action-edit" data-id="{{item.id}}" bindtap="editCategory">编辑</view>
+        <view class="action-delete" data-id="{{item.id}}" bindtap="deleteCategory">删除</view>
       </view>
     </view>
-  </view>
+  </scroll-view>
 
-  <!-- 添加/编辑弹窗 -->
-  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal">
-    <view class="modal-content" catchtap="preventBubble">
-      <view class="modal-title">{{editingId ? '编辑分类' : '添加分类'}}</view>
+  <!-- 弹窗 -->
+  <view class="modal" wx:if="{{showModal}}" bindtap="hideModal">
+    <view class="modal-box" catchtap="preventBubble">
+      <view class="modal-title">{{editingId ? '编辑分类' : '新建分类'}}</view>
       
-      <view class="input-group">
-        <text class="input-label">分类名称</text>
+      <view class="form-item">
+        <view class="form-label">名称</view>
         <input 
-          class="input" 
+          class="form-input" 
           placeholder="输入分类名称" 
           value="{{modalForm.name}}"
           bindinput="onModalNameInput"
         />
       </view>
 
-      <view class="input-group">
-        <text class="input-label">图标</text>
-        <view class="icon-picker">
+      <view class="form-item">
+        <view class="form-label">图标</view>
+        <view class="icon-list">
           <view 
             wx:for="{{iconOptions}}" 
             wx:key="*this"
-            class="icon-option {{modalForm.icon === item ? 'selected' : ''}}"
+            class="icon-opt {{modalForm.icon === item ? 'sel' : ''}}"
             data-icon="{{item}}"
             bindtap="selectIcon"
           >{{item}}</view>
@@ -75,12 +79,8 @@
       </view>
 
       <view class="modal-btns">
-        <button class="btn btn-secondary" bindtap="hideModal">取消</button>
-        <button 
-          class="btn btn-primary" 
-          bindtap="saveCategory"
-          loading="{{saving}}"
-        >保存</button>
+        <view class="btn-cancel" bindtap="hideModal">取消</view>
+        <view class="btn-save" bindtap="saveCategory">{{saving ? '保存中...' : '保存'}}</view>
       </view>
     </view>
   </view>

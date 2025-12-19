@@ -30,6 +30,8 @@ public class User {
 
     private Integer status; // 0-禁用 1-正常
 
+    private Integer isAdmin; // 0-普通用户 1-管理员
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

@@ -249,8 +249,77 @@ Page({
         }
     },
 
+    // ========== 滑动删除功能 ==========
+
+    // 触摸开始
+    onTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.swiping = false;
+    },
+
+    // 触摸移动
+    onTouchMove(e) {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - this.touchStartX;
+        const deltaY = touchY - this.touchStartY;
+
+        // 判断是否为水平滑动
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            this.swiping = true;
+            const index = e.currentTarget.dataset.index;
+            let offsetX = deltaX;
+
+            // 限制滑动范围
+            if (offsetX > 0) offsetX = 0;
+            if (offsetX < -280) offsetX = -280;
+
+            // 关闭其他已打开的滑动项
+            const filteredBookmarks = this.data.filteredBookmarks.map((item, i) => ({
+                ...item,
+                offsetX: i === index ? offsetX : 0
+            }));
+
+            this.setData({ filteredBookmarks });
+        }
+    },
+
+    // 触摸结束
+    onTouchEnd(e) {
+        if (!this.swiping) return;
+
+        const index = e.currentTarget.dataset.index;
+        const item = this.data.filteredBookmarks[index];
+        const offsetX = item.offsetX || 0;
+
+        // 如果滑动超过一半，显示删除按钮；否则恢复
+        const finalOffset = offsetX < -140 ? -280 : 0;
+
+        const filteredBookmarks = this.data.filteredBookmarks.map((item, i) => ({
+            ...item,
+            offsetX: i === index ? finalOffset : item.offsetX
+        }));
+
+        this.setData({ filteredBookmarks });
+    },
+
+    // 重置所有滑动状态
+    resetSwipe() {
+        const filteredBookmarks = this.data.filteredBookmarks.map(item => ({
+            ...item,
+            offsetX: 0
+        }));
+        this.setData({ filteredBookmarks });
+    },
+
     // 点击卡片
     handleCardTap(e) {
+        // 如果正在滑动，不触发点击
+        if (this.swiping) {
+            this.swiping = false;
+            return;
+        }
         const url = e.currentTarget.dataset.url;
         copyToClipboard(url);
     },
@@ -318,7 +387,10 @@ Page({
     },
 
     // 删除书签
-    async deleteBookmark(id) {
+    async deleteBookmark(e) {
+        // 支持两种调用方式：直接传 ID 或从事件获取
+        const id = typeof e === 'object' ? e.currentTarget.dataset.id : e;
+
         const confirmed = await showConfirm('确认删除', '确定要删除这个书签吗？删除后可在回收站恢复。');
         if (!confirmed) return;
 

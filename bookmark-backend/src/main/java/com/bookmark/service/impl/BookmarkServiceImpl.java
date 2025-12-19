@@ -8,6 +8,7 @@ import com.bookmark.entity.Bookmark;
 import com.bookmark.entity.User;
 import com.bookmark.mapper.BookmarkMapper;
 import com.bookmark.service.BookmarkService;
+import com.bookmark.service.ActivationCodeService;
 import com.bookmark.service.SearchService;
 import com.bookmark.service.UrlMetadataService;
 import com.bookmark.service.UrlMetadataService.UrlMetadata;
@@ -32,9 +33,22 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Autowired
     private UrlMetadataService urlMetadataService;
 
+    @Autowired
+    private ActivationCodeService activationCodeService;
+
     @Override
     public Bookmark createBookmark(BookmarkRequest request) {
         User currentUser = userService.getCurrentUser();
+
+        // 检查书签数量限制（使用动态限制）
+        int bookmarkLimit = activationCodeService.getUserBookmarkLimit(currentUser.getId());
+        Long bookmarkCount = bookmarkMapper.selectCount(
+                new QueryWrapper<Bookmark>()
+                        .eq("user_id", currentUser.getId())
+                        .eq("status", 1));
+        if (bookmarkCount >= bookmarkLimit) {
+            throw new RuntimeException("书签数量已达上限（" + bookmarkLimit + "个），请删除部分书签或使用激活码增加额度");
+        }
 
         // 如果标题或描述为空，尝试从 URL 获取元数据
         String title = request.getTitle();

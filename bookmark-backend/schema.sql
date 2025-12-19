@@ -100,6 +100,32 @@ CREATE TABLE IF NOT EXISTS `tag` (
   FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标签表';
 
+CREATE TABLE user_activation (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    code_id BIGINT NOT NULL,
+    extra_bookmarks INT DEFAULT 0,
+    extra_categories INT DEFAULT 0,
+    expire_time DATETIME NOT NULL,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_user_code (user_id, code_id)
+);
+
+CREATE TABLE activation_code (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(32) UNIQUE NOT NULL,
+    extra_bookmarks INT DEFAULT 10,
+    extra_categories INT DEFAULT 3,
+    expire_days INT DEFAULT 30,
+    max_uses INT DEFAULT 1,
+    used_count INT DEFAULT 0,
+    created_by BIGINT NOT NULL,
+    status TINYINT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE user ADD COLUMN is_admin TINYINT DEFAULT 0;
 
 -- 插入测试数据 (可选)
 -- 密码: 123456 (BCrypt加密后)

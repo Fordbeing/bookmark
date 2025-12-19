@@ -18,16 +18,29 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserMapper userMapper;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email));
+    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+        User user = null;
+
+        // 首先尝试按 ID 查询（JWT token 中存储的是用户 ID）
+        try {
+            Long userId = Long.parseLong(identifier);
+            user = userMapper.selectById(userId);
+        } catch (NumberFormatException e) {
+            // 不是数字，按邮箱查询
+        }
+
+        // 如果按 ID 没找到，尝试按邮箱查询
+        if (user == null) {
+            user = userMapper.selectOne(new QueryWrapper<User>().eq("email", identifier));
+        }
 
         if (user == null) {
-            throw new UsernameNotFoundException("User not found with email: " + email);
+            throw new UsernameNotFoundException("User not found: " + identifier);
         }
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
+                String.valueOf(user.getId()), // 使用 ID 作为 username
+                user.getPassword() != null ? user.getPassword() : "",
                 new ArrayList<>());
     }
 }

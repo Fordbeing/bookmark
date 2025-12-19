@@ -51,6 +51,53 @@ Page({
         this.loadTrash();
     },
 
+    // ========== 滑动功能 ==========
+
+    onTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.swiping = false;
+    },
+
+    onTouchMove(e) {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - this.touchStartX;
+        const deltaY = touchY - this.touchStartY;
+
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            this.swiping = true;
+            const index = e.currentTarget.dataset.index;
+            let offsetX = deltaX;
+
+            if (offsetX > 0) offsetX = 0;
+            if (offsetX < -280) offsetX = -280;
+
+            const bookmarks = this.data.bookmarks.map((item, i) => ({
+                ...item,
+                offsetX: i === index ? offsetX : 0
+            }));
+
+            this.setData({ bookmarks });
+        }
+    },
+
+    onTouchEnd(e) {
+        if (!this.swiping) return;
+
+        const index = e.currentTarget.dataset.index;
+        const item = this.data.bookmarks[index];
+        const offsetX = item.offsetX || 0;
+        const finalOffset = offsetX < -140 ? -280 : 0;
+
+        const bookmarks = this.data.bookmarks.map((item, i) => ({
+            ...item,
+            offsetX: i === index ? finalOffset : item.offsetX
+        }));
+
+        this.setData({ bookmarks });
+    },
+
     // 恢复书签
     async restoreBookmark(e) {
         const id = e.currentTarget.dataset.id;

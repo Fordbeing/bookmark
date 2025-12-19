@@ -39,6 +39,7 @@ public class WxAuthService {
 
     /**
      * 微信登录
+     * 
      * @param request 包含wx.login()返回的code
      * @return 登录响应(含token)
      */
@@ -48,8 +49,7 @@ public class WxAuthService {
 
         // 2. 根据openid查找用户
         User user = userMapper.selectOne(
-            new LambdaQueryWrapper<User>().eq(User::getOpenid, openid)
-        );
+                new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
 
         // 3. 如果用户不存在,创建新用户
         if (user == null) {
@@ -58,6 +58,9 @@ public class WxAuthService {
             user.setUsername("wx_" + UUID.randomUUID().toString().substring(0, 8));
             user.setNickname(request.getNickName() != null ? request.getNickName() : "微信用户");
             user.setAvatar(request.getAvatarUrl());
+            // 微信登录用户使用占位邮箱（openid的hash）
+            user.setEmail("wx_" + openid.hashCode() + "@wx.placeholder");
+            user.setPassword(""); // 微信用户无密码
             user.setLoginType(2); // 微信登录
             user.setStatus(1);
             user.setCreateTime(LocalDateTime.now());
@@ -69,7 +72,7 @@ public class WxAuthService {
         userMapper.updateById(user);
 
         // 5. 生成JWT Token
-        String token = jwtTokenProvider.generateToken(user.getId());
+        String token = jwtTokenProvider.generateToken(String.valueOf(user.getId()));
 
         // 6. 构建响应
         LoginResponse response = new LoginResponse();
@@ -85,15 +88,15 @@ public class WxAuthService {
 
     /**
      * 绑定手机号
-     * @param userId 当前用户ID
+     * 
+     * @param userId  当前用户ID
      * @param request 绑定请求
      * @return 是否成功
      */
     public boolean bindPhone(Long userId, BindPhoneRequest request) {
         // 检查手机号是否已被其他用户绑定
         User existingUser = userMapper.selectOne(
-            new LambdaQueryWrapper<User>().eq(User::getPhone, request.getPhone())
-        );
+                new LambdaQueryWrapper<User>().eq(User::getPhone, request.getPhone()));
 
         if (existingUser != null && !existingUser.getId().equals(userId)) {
             // 手机号已绑定其他账户,执行账户合并逻辑
@@ -130,9 +133,8 @@ public class WxAuthService {
         }
 
         String url = String.format(
-            "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
-            appId, appSecret, code
-        );
+                "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
+                appId, appSecret, code);
 
         try {
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);

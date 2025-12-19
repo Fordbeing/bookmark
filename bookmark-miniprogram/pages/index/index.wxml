@@ -1,103 +1,62 @@
 <!--pages/index/index.wxml-->
-<view class="index-page">
+<view class="page">
   <!-- 搜索栏 -->
-  <view class="search-bar">
-    <view class="search-input-wrapper">
+  <view class="search-section">
+    <view class="search-box">
       <text class="search-icon">🔍</text>
       <input 
         class="search-input" 
-        type="text" 
         placeholder="搜索书签..." 
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
         bindconfirm="handleSearch"
       />
-      <text 
-        class="clear-icon" 
-        wx:if="{{searchKeyword}}" 
-        bindtap="clearSearch"
-      >✕</text>
-    </view>
-    <!-- 通知按钮 -->
-    <view class="notification-btn" bindtap="toggleNotifications">
-      <text class="notification-icon">🔔</text>
-      <view class="notification-badge" wx:if="{{unreadCount > 0}}">{{unreadCount > 9 ? '9+' : unreadCount}}</view>
+      <text class="clear-btn" wx:if="{{searchKeyword}}" bindtap="clearSearch">✕</text>
     </view>
   </view>
 
   <!-- 快速添加 -->
-  <view class="quick-add card">
+  <view class="quick-add-section">
     <input 
       class="url-input" 
-      type="text" 
-      placeholder="粘贴链接：https://example.com" 
+      placeholder="粘贴链接快速添加" 
       value="{{inputUrl}}"
       bindinput="onUrlInput"
       bindconfirm="handleQuickAdd"
     />
-    <view class="quick-add-btns">
-      <button 
-        class="btn btn-primary btn-sm" 
-        bindtap="handleQuickAdd"
-        loading="{{addLoading}}"
-      >添加</button>
-      <button class="btn btn-secondary btn-sm" bindtap="goToAddPage">手工添加</button>
-    </view>
+    <button class="add-btn" bindtap="handleQuickAdd" loading="{{addLoading}}">添加</button>
   </view>
 
-  <!-- 分类筛选 -->
-  <scroll-view class="filter-tabs" scroll-x enable-flex>
-    <view 
-      class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" 
-      bindtap="filterAll"
-      hover-class="filter-tab-hover"
-      hover-stay-time="100"
-    >
-      <text>全部</text>
-      <text class="count">{{bookmarks.length}}</text>
+  <!-- 分类标签 -->
+  <scroll-view class="category-tabs" scroll-x>
+    <view class="tab {{currentFilter === 'all' ? 'active' : ''}}" bindtap="filterAll">
+      全部 ({{bookmarks.length}})
     </view>
-    <view 
-      class="filter-tab {{currentFilter === 'favorite' ? 'active' : ''}}" 
-      bindtap="filterFavorite"
-      hover-class="filter-tab-hover"
-      hover-stay-time="100"
-    >
-      <text>⭐ 收藏</text>
+    <view class="tab {{currentFilter === 'favorite' ? 'active' : ''}}" bindtap="filterFavorite">
+      ⭐ 收藏
     </view>
     <view 
       wx:for="{{categories}}" 
       wx:key="id"
-      class="filter-tab {{currentFilter === 'category' && currentCategoryId === item.id ? 'active' : ''}}"
+      class="tab {{currentFilter === 'category' && currentCategoryId === item.id ? 'active' : ''}}"
       data-id="{{item.id}}"
       bindtap="filterByCategory"
-      hover-class="filter-tab-hover"
-      hover-stay-time="100"
-    >
-      <text>{{item.icon || '📁'}} {{item.name}}</text>
-      <text class="count">{{item.count || 0}}</text>
-    </view>
+    >{{item.icon || '📁'}} {{item.name}}</view>
   </scroll-view>
-
-  <!-- 标题栏 -->
-  <view class="header-bar">
-    <text class="title">{{filterTitle}}</text>
-    <text class="count-badge">{{filteredBookmarks.length}}个</text>
-  </view>
 
   <!-- 书签列表 -->
   <scroll-view 
     class="bookmark-list" 
     scroll-y 
-    enable-back-to-top
     refresher-enabled
     refresher-triggered="{{refreshing}}"
     bindrefresherrefresh="onRefresh"
   >
     <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{!loading && filteredBookmarks.length === 0}}">
-      <text class="icon">📭</text>
-      <text class="text">{{searchKeyword ? '未找到相关书签' : '暂无书签'}}</text>
-      <button class="btn btn-primary btn-sm mt-md" bindtap="goToAddPage" wx:if="{{!searchKeyword}}">添加书签</button>
+    <view class="empty" wx:if="{{!loading && filteredBookmarks.length === 0}}">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">{{searchKeyword ? '未找到相关书签' : '暂无书签'}}</text>
+      <button class="empty-btn" bindtap="goToAddPage" wx:if="{{!searchKeyword}}">添加书签</button>
     </view>
 
     <!-- 加载中 -->
@@ -105,53 +64,45 @@
       <text>加载中...</text>
     </view>
 
-    <!-- 书签卡片 -->
+    <!-- 书签卡片 - 可滑动删除 -->
     <view 
       wx:for="{{filteredBookmarks}}" 
       wx:key="id"
-      class="bookmark-card card"
-      data-id="{{item.id}}"
-      data-url="{{item.url}}"
-      bindtap="handleCardTap"
-      bindlongpress="showActionMenu"
-      hover-class="bookmark-card-hover"
-      hover-stay-time="100"
+      class="swipe-container"
     >
-      <!-- 头部 -->
-      <view class="card-header">
-        <view class="card-icon">
-          <text>{{item.title[0] || '?'}}</text>
+      <view 
+        class="swipe-content"
+        style="transform: translateX({{item.offsetX || 0}}rpx)"
+        data-id="{{item.id}}"
+        data-index="{{index}}"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+      >
+        <view 
+          class="bookmark-item"
+          data-id="{{item.id}}"
+          data-url="{{item.url}}"
+          bindtap="handleCardTap"
+          bindlongpress="showActionMenu"
+        >
+          <view class="item-icon">
+            <text>{{item.title[0] || '?'}}</text>
+          </view>
+          <view class="item-content">
+            <text class="item-title">{{item.title || item.url}}</text>
+            <text class="item-url">{{item.url}}</text>
+            <view class="item-meta">
+              <text>{{item.formattedDate}}</text>
+              <text wx:if="{{item.isFavorite === 1}}">⭐</text>
+            </view>
+          </view>
         </view>
-        <view class="card-title-wrapper">
-          <text class="card-title truncate">{{item.title || item.url}}</text>
-          <text class="card-url truncate">{{item.url}}</text>
-        </view>
-        <text class="favorite-star" wx:if="{{item.isFavorite === 1}}">⭐</text>
       </view>
-
-      <!-- 描述 -->
-      <text class="card-desc line-clamp-2">{{item.description || '暂无描述...'}}</text>
-
-      <!-- 标签 -->
-      <view class="card-tags" wx:if="{{item.parsedTags && item.parsedTags.length > 0}}">
-        <text 
-          class="tag" 
-          wx:for="{{item.parsedTags}}" 
-          wx:for-item="tag" 
-          wx:key="*this"
-        >{{tag}}</text>
-      </view>
-
-      <!-- 底部 -->
-      <view class="card-footer">
-        <view class="card-meta">
-          <text class="meta-item">🕐 {{item.formattedDate}}</text>
-          <text class="meta-item" wx:if="{{item.visitCount}}">👁 {{item.visitCount}}</text>
-        </view>
-        <view class="card-actions">
-          <button class="action-btn" data-url="{{item.url}}" catchtap="copyUrl">📋</button>
-          <button class="action-btn" data-id="{{item.id}}" catchtap="goToEdit">✏️</button>
-        </view>
+      <!-- 操作按钮 -->
+      <view class="swipe-actions">
+        <view class="action-edit" data-id="{{item.id}}" bindtap="goToEdit">编辑</view>
+        <view class="action-delete" data-id="{{item.id}}" bindtap="deleteBookmark">删除</view>
       </view>
     </view>
   </scroll-view>
@@ -159,45 +110,5 @@
   <!-- 浮动添加按钮 -->
   <view class="fab" bindtap="goToAddPage">
     <text>+</text>
-  </view>
-
-  <!-- 通知弹窗 -->
-  <view class="notification-modal" wx:if="{{showNotifications}}">
-    <!-- 遮罩层 -->
-    <view class="notification-mask" bindtap="toggleNotifications"></view>
-    <!-- 弹窗内容 -->
-    <view class="notification-content">
-      <!-- 头部 -->
-      <view class="notification-header">
-        <text class="notification-title">消息通知</text>
-        <text class="notification-mark-read" wx:if="{{unreadCount > 0}}" bindtap="markAllAsRead">全部已读</text>
-      </view>
-      <!-- 列表 -->
-      <scroll-view class="notification-list" scroll-y>
-        <view wx:if="{{notifications.length === 0}}" class="notification-empty">
-          <text class="empty-icon">🔔</text>
-          <text class="empty-text">暂无通知</text>
-        </view>
-        <view 
-          wx:for="{{notifications}}" 
-          wx:key="id" 
-          class="notification-item {{!item.read ? 'unread' : ''}}"
-          bindtap="handleNotificationClick"
-          data-index="{{index}}"
-        >
-          <text class="item-icon">{{item.icon}}</text>
-          <view class="item-content">
-            <text class="item-title">{{item.title}}</text>
-            <text class="item-desc">{{item.content}}</text>
-            <text class="item-time">{{item.time}}</text>
-          </view>
-          <view class="item-dot" wx:if="{{!item.read}}"></view>
-        </view>
-      </scroll-view>
-      <!-- 底部 -->
-      <view class="notification-footer" bindtap="toggleNotifications">
-        <text>关闭</text>
-      </view>
-    </view>
   </view>
 </view>

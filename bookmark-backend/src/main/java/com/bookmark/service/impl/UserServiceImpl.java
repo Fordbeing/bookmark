@@ -128,13 +128,26 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("未找到认证信息，请重新登录");
         }
 
-        String email = authentication.getName();
+        String identifier = authentication.getName();
 
-        if (email == null || "anonymousUser".equals(email)) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
             throw new RuntimeException("用户未登录或会话已过期，请重新登录");
         }
 
-        User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email));
+        User user = null;
+
+        // 首先尝试按 ID 查询（JWT token 中存储的是用户 ID）
+        try {
+            Long userId = Long.parseLong(identifier);
+            user = userMapper.selectById(userId);
+        } catch (NumberFormatException e) {
+            // 不是数字，按邮箱查询
+        }
+
+        // 如果按 ID 没找到，尝试按邮箱查询
+        if (user == null) {
+            user = userMapper.selectOne(new QueryWrapper<User>().eq("email", identifier));
+        }
 
         if (user == null) {
             throw new RuntimeException("用户不存在，请重新登录");

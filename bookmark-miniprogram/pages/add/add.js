@@ -168,9 +168,9 @@ Page({
             const data = {
                 url: url,
                 title: form.title,
-                description: form.description,
+                description: form.description || '',
                 categoryId: form.categoryId,
-                tags: JSON.stringify(form.tags),
+                tags: form.tags || [],
                 isFavorite: form.isFavorite ? 1 : 0
             };
 

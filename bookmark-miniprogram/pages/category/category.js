@@ -94,6 +94,53 @@ Page({
         this.setData({ showModal: false });
     },
 
+    // ========== 滑动删除功能 ==========
+
+    onTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.swiping = false;
+    },
+
+    onTouchMove(e) {
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - this.touchStartX;
+        const deltaY = touchY - this.touchStartY;
+
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            this.swiping = true;
+            const index = e.currentTarget.dataset.index;
+            let offsetX = deltaX;
+
+            if (offsetX > 0) offsetX = 0;
+            if (offsetX < -280) offsetX = -280;
+
+            const categories = this.data.categories.map((item, i) => ({
+                ...item,
+                offsetX: i === index ? offsetX : 0
+            }));
+
+            this.setData({ categories });
+        }
+    },
+
+    onTouchEnd(e) {
+        if (!this.swiping) return;
+
+        const index = e.currentTarget.dataset.index;
+        const item = this.data.categories[index];
+        const offsetX = item.offsetX || 0;
+        const finalOffset = offsetX < -140 ? -280 : 0;
+
+        const categories = this.data.categories.map((item, i) => ({
+            ...item,
+            offsetX: i === index ? finalOffset : item.offsetX
+        }));
+
+        this.setData({ categories });
+    },
+
     preventBubble() { },
 
     // 表单输入

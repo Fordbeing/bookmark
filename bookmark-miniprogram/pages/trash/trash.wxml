@@ -1,16 +1,16 @@
 <!--pages/trash/trash.wxml-->
 <view class="trash-page">
-  <!-- 标题栏 -->
+  <!-- 固定标题栏 -->
   <view class="header-bar">
     <text class="title">🗑️ 回收站</text>
-    <button 
-      class="btn btn-danger btn-sm" 
+    <view 
+      class="clear-btn" 
       wx:if="{{bookmarks.length > 0}}"
       bindtap="clearTrash"
-    >清空回收站</button>
+    >清空</view>
   </view>
 
-  <!-- 书签列表 -->
+  <!-- 可滚动书签列表 -->
   <scroll-view 
     class="bookmark-list" 
     scroll-y 
@@ -25,44 +25,39 @@
     </view>
 
     <!-- 加载中 -->
-    <view class="loading" wx:if="{{loading}}">
-      <text>加载中...</text>
-    </view>
+    <view class="loading" wx:if="{{loading}}">加载中...</view>
 
-    <!-- 书签卡片 -->
+    <!-- 书签卡片 - 可滑动恢复 -->
     <view 
       wx:for="{{bookmarks}}" 
       wx:key="id"
-      class="trash-card card"
-      hover-class="trash-card-hover"
-      hover-stay-time="100"
+      class="swipe-container"
     >
-      <!-- 头部 -->
-      <view class="card-header">
-        <view class="card-icon">
-          <text>{{item.title[0] || '?'}}</text>
-        </view>
-        <view class="card-title-wrapper">
-          <text class="card-title truncate">{{item.title || item.url}}</text>
-          <text class="card-url truncate">{{item.url}}</text>
+      <view 
+        class="swipe-content"
+        style="transform: translateX({{item.offsetX || 0}}rpx)"
+        data-id="{{item.id}}"
+        data-index="{{index}}"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+      >
+        <view class="trash-card">
+          <view class="card-header">
+            <view class="card-icon">
+              <text>{{item.title[0] || '?'}}</text>
+            </view>
+            <view class="card-info">
+              <text class="card-title">{{item.title || item.url}}</text>
+              <text class="card-url">{{item.url}}</text>
+            </view>
+          </view>
         </view>
       </view>
-
-      <!-- 描述 -->
-      <text class="card-desc line-clamp-2">{{item.description || '暂无描述...'}}</text>
-
       <!-- 操作按钮 -->
-      <view class="card-actions">
-        <button 
-          class="btn btn-success btn-sm" 
-          data-id="{{item.id}}"
-          bindtap="restoreBookmark"
-        >恢复</button>
-        <button 
-          class="btn btn-danger-outline btn-sm" 
-          data-id="{{item.id}}"
-          bindtap="permanentDelete"
-        >永久删除</button>
+      <view class="swipe-actions">
+        <view class="action-restore" data-id="{{item.id}}" bindtap="restoreBookmark">恢复</view>
+        <view class="action-delete" data-id="{{item.id}}" bindtap="permanentDelete">删除</view>
       </view>
     </view>
   </scroll-view>

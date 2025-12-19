@@ -8,13 +8,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 
 /**
  * 搜索服务
@@ -61,15 +66,41 @@ public class SearchService {
         }
 
         try {
-            // 使用 Criteria 构建查询
-            Criteria criteria = new Criteria("userId").is(userId)
-                    .and(
-                            new Criteria("title").contains(keyword)
-                                    .or("description").contains(keyword)
-                                    .or("tags").contains(keyword)
-                                    .or("url").contains(keyword));
+            String searchText = keyword.trim();
+            String wildcardPattern = "*" + searchText.toLowerCase() + "*";
 
-            CriteriaQuery query = new CriteriaQuery(criteria);
+            // 构建原生 Elasticsearch 查询
+            // 1. 用户ID必须匹配（term query）
+            Query userQuery = TermQuery.of(t -> t.field("userId").value(userId))._toQuery();
+
+            // 2. 标题/描述/标签使用 multi_match 查询
+            Query textQuery = MultiMatchQuery.of(m -> m
+                    .query(searchText)
+                    .fields("title^3", "description", "tags")
+                    .type(TextQueryType.BestFields)
+                    .fuzziness("AUTO"))._toQuery();
+
+            // 3. URL 使用 wildcard 查询（支持部分匹配）
+            Query urlQuery = co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery.of(w -> w
+                    .field("url")
+                    .value(wildcardPattern)
+                    .caseInsensitive(true))._toQuery();
+
+            // 4. 文本查询或URL查询任一匹配即可（should）
+            Query searchQuery = BoolQuery.of(b -> b
+                    .should(textQuery)
+                    .should(urlQuery)
+                    .minimumShouldMatch("1"))._toQuery();
+
+            // 5. 最终查询：用户必须匹配 AND 搜索条件匹配
+            Query boolQuery = BoolQuery.of(b -> b
+                    .must(userQuery)
+                    .must(searchQuery))._toQuery();
+
+            NativeQuery query = NativeQuery.builder()
+                    .withQuery(boolQuery)
+                    .build();
+
             SearchHits<BookmarkDocument> searchHits = elasticsearchOperations.search(query, BookmarkDocument.class);
 
             return searchHits.getSearchHits().stream()

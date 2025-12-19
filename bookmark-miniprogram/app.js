@@ -3,7 +3,9 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'http://localhost:8080/api'
+    // 开发环境使用 127.0.0.1（模拟器中 localhost 不工作，但 127.0.0.1 可以）
+    // 真机调试时需要改成电脑的局域网 IP
+    baseUrl: 'http://127.0.0.1:8080/api'
   },
 
   onLaunch() {
@@ -14,7 +16,7 @@ App({
   checkLoginStatus() {
     const token = wx.getStorageSync('token');
     const userInfo = wx.getStorageSync('userInfo');
-    
+
     if (token && userInfo) {
       this.globalData.token = token;
       this.globalData.userInfo = userInfo;
