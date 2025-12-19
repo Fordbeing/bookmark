@@ -1,0 +1,150 @@
+<!--pages/index/index.wxml-->
+<view class="index-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrapper">
+      <text class="search-icon">🔍</text>
+      <input 
+        class="search-input" 
+        type="text" 
+        placeholder="搜索书签..." 
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="handleSearch"
+      />
+      <text 
+        class="clear-icon" 
+        wx:if="{{searchKeyword}}" 
+        bindtap="clearSearch"
+      >✕</text>
+    </view>
+  </view>
+
+  <!-- 快速添加 -->
+  <view class="quick-add card">
+    <input 
+      class="url-input" 
+      type="text" 
+      placeholder="粘贴链接：https://example.com" 
+      value="{{inputUrl}}"
+      bindinput="onUrlInput"
+      bindconfirm="handleQuickAdd"
+    />
+    <view class="quick-add-btns">
+      <button 
+        class="btn btn-primary btn-sm" 
+        bindtap="handleQuickAdd"
+        loading="{{addLoading}}"
+      >添加</button>
+      <button class="btn btn-secondary btn-sm" bindtap="goToAddPage">手工添加</button>
+    </view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <scroll-view class="filter-tabs" scroll-x enable-flex>
+    <view 
+      class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" 
+      bindtap="filterAll"
+    >
+      <text>全部</text>
+      <text class="count">{{bookmarks.length}}</text>
+    </view>
+    <view 
+      class="filter-tab {{currentFilter === 'favorite' ? 'active' : ''}}" 
+      bindtap="filterFavorite"
+    >
+      <text>⭐ 收藏</text>
+    </view>
+    <view 
+      wx:for="{{categories}}" 
+      wx:key="id"
+      class="filter-tab {{currentFilter === 'category' && currentCategoryId === item.id ? 'active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="filterByCategory"
+    >
+      <text>{{item.icon || '📁'}} {{item.name}}</text>
+      <text class="count">{{item.count || 0}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- 标题栏 -->
+  <view class="header-bar">
+    <text class="title">{{filterTitle}}</text>
+    <text class="count-badge">{{filteredBookmarks.length}}个</text>
+  </view>
+
+  <!-- 书签列表 -->
+  <scroll-view 
+    class="bookmark-list" 
+    scroll-y 
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+  >
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && filteredBookmarks.length === 0}}">
+      <text class="icon">📭</text>
+      <text class="text">{{searchKeyword ? '未找到相关书签' : '暂无书签'}}</text>
+      <button class="btn btn-primary btn-sm mt-md" bindtap="goToAddPage" wx:if="{{!searchKeyword}}">添加书签</button>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 书签卡片 -->
+    <view 
+      wx:for="{{filteredBookmarks}}" 
+      wx:key="id"
+      class="bookmark-card card"
+      data-id="{{item.id}}"
+      data-url="{{item.url}}"
+      bindtap="handleCardTap"
+      bindlongpress="showActionMenu"
+    >
+      <!-- 头部 -->
+      <view class="card-header">
+        <view class="card-icon">
+          <text>{{item.title[0] || '?'}}</text>
+        </view>
+        <view class="card-title-wrapper">
+          <text class="card-title truncate">{{item.title || item.url}}</text>
+          <text class="card-url truncate">{{item.url}}</text>
+        </view>
+        <text class="favorite-star" wx:if="{{item.isFavorite === 1}}">⭐</text>
+      </view>
+
+      <!-- 描述 -->
+      <text class="card-desc line-clamp-2">{{item.description || '暂无描述...'}}</text>
+
+      <!-- 标签 -->
+      <view class="card-tags" wx:if="{{item.parsedTags && item.parsedTags.length > 0}}">
+        <text 
+          class="tag" 
+          wx:for="{{item.parsedTags}}" 
+          wx:for-item="tag" 
+          wx:key="*this"
+        >{{tag}}</text>
+      </view>
+
+      <!-- 底部 -->
+      <view class="card-footer">
+        <view class="card-meta">
+          <text class="meta-item">🕐 {{item.formattedDate}}</text>
+          <text class="meta-item" wx:if="{{item.visitCount}}">👁 {{item.visitCount}}</text>
+        </view>
+        <view class="card-actions">
+          <button class="action-btn" data-url="{{item.url}}" catchtap="copyUrl">📋</button>
+          <button class="action-btn" data-id="{{item.id}}" catchtap="goToEdit">✏️</button>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 浮动添加按钮 -->
+  <view class="fab" bindtap="goToAddPage">
+    <text>+</text>
+  </view>
+</view>

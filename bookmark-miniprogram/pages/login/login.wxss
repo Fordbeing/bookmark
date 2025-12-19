@@ -1,0 +1,145 @@
+/* pages/login/login.wxss */
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+  padding: 60rpx 40rpx;
+  box-sizing: border-box;
+}
+
+/* 顶部装饰 */
+.header {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #ffffff;
+}
+
+.logo {
+  font-size: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  display: block;
+  font-size: 24rpx;
+  opacity: 0.7;
+}
+
+/* Tab 切换 */
+.tab-bar {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 8rpx;
+  margin-bottom: 40rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 12rpx;
+  transition: all 0.3s;
+}
+
+.tab-item.active {
+  background-color: #ffffff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* 表单容器 */
+.form-container {
+  background-color: #ffffff;
+  border-radius: 24rpx;
+  padding: 48rpx 40rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+}
+
+.form-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 40rpx;
+}
+
+/* 输入框组 */
+.input-group {
+  margin-bottom: 32rpx;
+}
+
+.input-label {
+  display: block;
+  font-size: 26rpx;
+  color: #6b7280;
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 24rpx;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+}
+
+/* 记住我 */
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 40rpx;
+  font-size: 26rpx;
+  color: #6b7280;
+}
+
+.remember-me switch {
+  transform: scale(0.8);
+}
+
+/* 按钮 */
+.btn {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 12rpx;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-primary:active {
+  background-color: #1e40af;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* 底部提示 */
+.footer {
+  text-align: center;
+  margin-top: 40rpx;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 26rpx;
+}

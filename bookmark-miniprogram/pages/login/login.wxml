@@ -1,0 +1,129 @@
+<!--pages/login/login.wxml-->
+<view class="login-page">
+  <!-- 顶部装饰 -->
+  <view class="header">
+    <view class="logo">🔖</view>
+    <text class="title">书签管理</text>
+    <text class="subtitle">Bookmark Manager</text>
+  </view>
+
+  <!-- 登录/注册切换 Tab -->
+  <view class="tab-bar">
+    <view 
+      class="tab-item {{isLogin ? 'active' : ''}}" 
+      bindtap="switchToLogin"
+    >登录</view>
+    <view 
+      class="tab-item {{!isLogin ? 'active' : ''}}" 
+      bindtap="switchToRegister"
+    >注册</view>
+  </view>
+
+  <!-- 登录表单 -->
+  <view class="form-container" wx:if="{{isLogin}}">
+    <view class="form-title">欢迎回来</view>
+    
+    <view class="input-group">
+      <text class="input-label">邮箱</text>
+      <input 
+        class="input" 
+        type="text" 
+        placeholder="输入您的邮箱" 
+        value="{{loginForm.email}}"
+        bindinput="onLoginEmailInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">密码</text>
+      <input 
+        class="input" 
+        type="password" 
+        placeholder="输入您的密码" 
+        value="{{loginForm.password}}"
+        bindinput="onLoginPasswordInput"
+      />
+    </view>
+
+    <view class="remember-me">
+      <switch 
+        checked="{{loginForm.remember}}" 
+        bindchange="onRememberChange"
+        color="#2563eb"
+      />
+      <text>记住我</text>
+    </view>
+
+    <button 
+      class="btn btn-primary btn-block" 
+      bindtap="handleLogin"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+    >
+      {{loading ? '登录中...' : '登录'}}
+    </button>
+  </view>
+
+  <!-- 注册表单 -->
+  <view class="form-container" wx:else>
+    <view class="form-title">创建账户</view>
+    
+    <view class="input-group">
+      <text class="input-label">用户名</text>
+      <input 
+        class="input" 
+        type="text" 
+        placeholder="输入用户名" 
+        value="{{registerForm.username}}"
+        bindinput="onRegisterUsernameInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">邮箱</text>
+      <input 
+        class="input" 
+        type="text" 
+        placeholder="输入您的邮箱" 
+        value="{{registerForm.email}}"
+        bindinput="onRegisterEmailInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">密码</text>
+      <input 
+        class="input" 
+        type="password" 
+        placeholder="设置密码（至少6位）" 
+        value="{{registerForm.password}}"
+        bindinput="onRegisterPasswordInput"
+      />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">确认密码</text>
+      <input 
+        class="input" 
+        type="password" 
+        placeholder="确认密码" 
+        value="{{registerForm.confirmPassword}}"
+        bindinput="onRegisterConfirmPasswordInput"
+      />
+    </view>
+
+    <button 
+      class="btn btn-primary btn-block" 
+      bindtap="handleRegister"
+      loading="{{loading}}"
+      disabled="{{loading}}"
+    >
+      {{loading ? '注册中...' : '创建账户'}}
+    </button>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer">
+    <text>{{isLogin ? '没有账户？点击注册' : '已有账户？点击登录'}}</text>
+  </view>
+</view>

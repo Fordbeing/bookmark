@@ -1,0 +1,67 @@
+<!--pages/trash/trash.wxml-->
+<view class="trash-page">
+  <!-- 标题栏 -->
+  <view class="header-bar">
+    <text class="title">🗑️ 回收站</text>
+    <button 
+      class="btn btn-danger btn-sm" 
+      wx:if="{{bookmarks.length > 0}}"
+      bindtap="clearTrash"
+    >清空回收站</button>
+  </view>
+
+  <!-- 书签列表 -->
+  <scroll-view 
+    class="bookmark-list" 
+    scroll-y 
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+  >
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && bookmarks.length === 0}}">
+      <text class="icon">🗑️</text>
+      <text class="text">回收站是空的</text>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 书签卡片 -->
+    <view 
+      wx:for="{{bookmarks}}" 
+      wx:key="id"
+      class="trash-card card"
+    >
+      <!-- 头部 -->
+      <view class="card-header">
+        <view class="card-icon">
+          <text>{{item.title[0] || '?'}}</text>
+        </view>
+        <view class="card-title-wrapper">
+          <text class="card-title truncate">{{item.title || item.url}}</text>
+          <text class="card-url truncate">{{item.url}}</text>
+        </view>
+      </view>
+
+      <!-- 描述 -->
+      <text class="card-desc line-clamp-2">{{item.description || '暂无描述...'}}</text>
+
+      <!-- 操作按钮 -->
+      <view class="card-actions">
+        <button 
+          class="btn btn-success btn-sm" 
+          data-id="{{item.id}}"
+          bindtap="restoreBookmark"
+        >恢复</button>
+        <button 
+          class="btn btn-danger-outline btn-sm" 
+          data-id="{{item.id}}"
+          bindtap="permanentDelete"
+        >永久删除</button>
+      </view>
+    </view>
+  </scroll-view>
+</view>

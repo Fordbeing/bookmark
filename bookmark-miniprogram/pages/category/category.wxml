@@ -1,0 +1,85 @@
+<!--pages/category/category.wxml-->
+<view class="category-page">
+  <!-- 标题栏 -->
+  <view class="header-bar">
+    <text class="title">分类管理</text>
+    <button class="btn btn-primary btn-sm" bindtap="showAddModal">+ 添加分类</button>
+  </view>
+
+  <!-- 分类列表 -->
+  <view class="category-list">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!loading && categories.length === 0}}">
+      <text class="icon">📁</text>
+      <text class="text">暂无分类</text>
+      <button class="btn btn-primary btn-sm mt-md" bindtap="showAddModal">创建分类</button>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="loading" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 分类卡片 -->
+    <view 
+      wx:for="{{categories}}" 
+      wx:key="id"
+      class="category-card card"
+      data-id="{{item.id}}"
+      bindtap="goToCategoryBookmarks"
+    >
+      <view class="category-info">
+        <view class="category-icon" style="background-color: {{item.color || '#3b82f6'}}">
+          <text>{{item.icon || '📁'}}</text>
+        </view>
+        <view class="category-detail">
+          <text class="category-name">{{item.name}}</text>
+          <text class="category-count">{{item.count || 0}} 个书签</text>
+        </view>
+      </view>
+      <view class="category-actions">
+        <button class="action-btn" data-id="{{item.id}}" catchtap="editCategory">✏️</button>
+        <button class="action-btn danger" data-id="{{item.id}}" catchtap="deleteCategory">🗑️</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加/编辑弹窗 -->
+  <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideModal">
+    <view class="modal-content" catchtap="preventBubble">
+      <view class="modal-title">{{editingId ? '编辑分类' : '添加分类'}}</view>
+      
+      <view class="input-group">
+        <text class="input-label">分类名称</text>
+        <input 
+          class="input" 
+          placeholder="输入分类名称" 
+          value="{{modalForm.name}}"
+          bindinput="onModalNameInput"
+        />
+      </view>
+
+      <view class="input-group">
+        <text class="input-label">图标</text>
+        <view class="icon-picker">
+          <view 
+            wx:for="{{iconOptions}}" 
+            wx:key="*this"
+            class="icon-option {{modalForm.icon === item ? 'selected' : ''}}"
+            data-icon="{{item}}"
+            bindtap="selectIcon"
+          >{{item}}</view>
+        </view>
+      </view>
+
+      <view class="modal-btns">
+        <button class="btn btn-secondary" bindtap="hideModal">取消</button>
+        <button 
+          class="btn btn-primary" 
+          bindtap="saveCategory"
+          loading="{{saving}}"
+        >保存</button>
+      </view>
+    </view>
+  </view>
+</view>
