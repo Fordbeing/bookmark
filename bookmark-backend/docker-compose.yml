@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bookmark-mysql
+    platform: linux/arm64 # 明确指定架构
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bookmark_db
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    networks:
+      - bookmark-net
+
+  redis:
+    image: redis:latest
+    container_name: bookmark-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - bookmark-net
+
+  elasticsearch:
+    build: ./elasticsearch
+    container_name: bookmark-es
+    platform: linux/arm64
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - bookmark-net
+
+  app:
+    build: .
+    container_name: bookmark-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+      - elasticsearch
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bookmark_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
+    networks:
+      - bookmark-net
+
+networks:
+  bookmark-net:
+    driver: bridge
