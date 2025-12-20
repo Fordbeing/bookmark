@@ -36,8 +36,10 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> deleteCategory(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
+    public Result<Void> deleteCategory(
+            @PathVariable Long id,
+            @RequestParam(value = "deleteBookmarks", defaultValue = "false") boolean deleteBookmarks) {
+        categoryService.deleteCategory(id, deleteBookmarks);
         return Result.success("分类删除成功", null);
     }
 

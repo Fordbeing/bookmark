@@ -475,19 +475,35 @@ const handleDeleteCategory = async (category) => {
   // 检查是否有书签使用此分类
   const bookmarkCount = props.bookmarks.filter(b => b.categoryId === category.id).length;
   
+  let deleteBookmarks = false;
+  
   if (bookmarkCount > 0) {
     try {
-      await ElMessageBox.confirm(
-        `该分类下有 ${bookmarkCount} 个书签，删除分类后这些书签将变为"未分类"。确定要继续吗？`,
-        '警告',
-        {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning'
+      // 提供两个选项
+      const action = await ElMessageBox({
+        title: '删除分类',
+        message: `该分类下有 ${bookmarkCount} 个书签，请选择处理方式：`,
+        showCancelButton: true,
+        showConfirmButton: true,
+        distinguishCancelAndClose: true,
+        confirmButtonText: '移至未分类',
+        cancelButtonText: '一并删除',
+        type: 'warning',
+        beforeClose: (action, instance, done) => {
+          done();
         }
-      );
-    } catch {
-      return; // 用户取消
+      });
+      
+      // 用户点击确认 = 移至未分类
+      deleteBookmarks = false;
+    } catch (action) {
+      if (action === 'cancel') {
+        // 用户点击取消 = 删除书签
+        deleteBookmarks = true;
+      } else {
+        // 用户关闭弹窗
+        return;
+      }
     }
   } else {
     try {
@@ -506,8 +522,8 @@ const handleDeleteCategory = async (category) => {
   }
 
   try {
-    await deleteCategoryAPI(category.id);
-    ElMessage.success('分类已删除');
+    await deleteCategoryAPI(category.id, deleteBookmarks);
+    ElMessage.success(deleteBookmarks ? '分类及其书签已删除' : '分类已删除，书签已移至未分类');
     
     // 如果当前选中的是被删除的分类，切换到全部
     if (selectedCategoryId.value === category.id) {

@@ -27,9 +27,10 @@ export const updateCategoryAPI = (id, data) => {
 /**
  * 删除分类
  * @param {Number} id - 分类ID
+ * @param {Boolean} deleteBookmarks - 是否删除分类下的书签（false则移至未分类）
  */
-export const deleteCategoryAPI = (id) => {
-    return request.delete(`/categories/${id}`);
+export const deleteCategoryAPI = (id, deleteBookmarks = false) => {
+    return request.delete(`/categories/${id}?deleteBookmarks=${deleteBookmarks}`);
 };
 
 /**

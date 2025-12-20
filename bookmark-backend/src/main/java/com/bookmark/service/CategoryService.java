@@ -10,7 +10,7 @@ public interface CategoryService {
 
     Category updateCategory(Long id, CategoryRequest request);
 
-    void deleteCategory(Long id);
+    void deleteCategory(Long id, boolean deleteBookmarks);
 
     List<Category> getCategoryList();
 

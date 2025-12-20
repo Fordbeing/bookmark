@@ -11,6 +11,7 @@ import com.bookmark.mapper.CategoryMapper;
 import com.bookmark.service.ActivationCodeService;
 import com.bookmark.service.CategoryCacheService;
 import com.bookmark.service.CategoryService;
+import com.bookmark.service.SearchService;
 import com.bookmark.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     private CategoryCacheService categoryCacheService;
+
+    @Autowired
+    private SearchService searchService;
 
     @Override
     public Category createCategory(CategoryRequest request) {
@@ -97,7 +101,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public void deleteCategory(Long id) {
+    public void deleteCategory(Long id, boolean deleteBookmarks) {
         User currentUser = userService.getCurrentUser();
         Category category = categoryMapper.selectById(id);
 
@@ -105,11 +109,27 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("分类不存在或无权限");
         }
 
-        // 将该分类下的书签设置为未分类（categoryId = null）
-        bookmarkMapper.update(null, new UpdateWrapper<Bookmark>()
-                .eq("category_id", id)
-                .eq("user_id", currentUser.getId())
-                .set("category_id", null));
+        if (deleteBookmarks) {
+            // 删除该分类下的所有书签（包括ES）
+            List<Bookmark> bookmarks = bookmarkMapper.selectList(
+                    new QueryWrapper<Bookmark>()
+                            .eq("category_id", id)
+                            .eq("user_id", currentUser.getId()));
+
+            for (Bookmark bookmark : bookmarks) {
+                searchService.deleteBookmark(bookmark.getId());
+            }
+
+            bookmarkMapper.delete(new QueryWrapper<Bookmark>()
+                    .eq("category_id", id)
+                    .eq("user_id", currentUser.getId()));
+        } else {
+            // 将书签移至未分类
+            bookmarkMapper.update(null, new UpdateWrapper<Bookmark>()
+                    .eq("category_id", id)
+                    .eq("user_id", currentUser.getId())
+                    .set("category_id", null));
+        }
 
         categoryMapper.deleteById(id);
 
