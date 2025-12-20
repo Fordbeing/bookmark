@@ -8,9 +8,6 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 
-/**
- * Elasticsearch 书签文档
- */
 @Data
 @Document(indexName = "bookmarks")
 public class BookmarkDocument {
@@ -24,7 +21,7 @@ public class BookmarkDocument {
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String title;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Keyword)
     private String url;
 
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
@@ -32,6 +29,8 @@ public class BookmarkDocument {
 
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String tags;
+
+    private String iconUrl;
 
     @Field(type = FieldType.Long)
     private Long categoryId;
@@ -42,10 +41,7 @@ public class BookmarkDocument {
     @Field(type = FieldType.Date, format = {}, pattern = "uuuu-MM-dd HH:mm:ss || uuuu-MM-dd || epoch_millis")
     private LocalDateTime createTime;
 
-    /**
-     * 从 Bookmark 实体转换
-     */
-    public static BookmarkDocument fromBookmark(Bookmark bookmark) {
+    public static BookmarkDocument fromBookmark(com.bookmark.entity.Bookmark bookmark) {
         BookmarkDocument doc = new BookmarkDocument();
         doc.setId(bookmark.getId());
         doc.setUserId(bookmark.getUserId());
@@ -56,6 +52,8 @@ public class BookmarkDocument {
         doc.setCategoryId(bookmark.getCategoryId());
         doc.setIsFavorite(bookmark.getIsFavorite());
         doc.setCreateTime(bookmark.getCreateTime());
+        doc.setIconUrl(bookmark.getIconUrl());
+
         return doc;
     }
 }

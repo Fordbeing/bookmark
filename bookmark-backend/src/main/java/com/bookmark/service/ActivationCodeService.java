@@ -28,8 +28,8 @@ public class ActivationCodeService {
     @Autowired
     private UserService userService;
 
-    private static final int BASE_BOOKMARK_LIMIT = 50;
-    private static final int BASE_CATEGORY_LIMIT = 7;
+    private static final int BASE_BOOKMARK_LIMIT = 200;
+    private static final int BASE_CATEGORY_LIMIT = 20;
 
     /**
      * 创建激活码（仅管理员）
@@ -133,6 +133,7 @@ public class ActivationCodeService {
             return Integer.MAX_VALUE;
         }
 
+        // Redis定时任务会自动更新过期状态，这里直接查询即可
         Integer extra = userActivationMapper.getActiveExtraBookmarks(userId);
         return BASE_BOOKMARK_LIMIT + (extra != null ? extra : 0);
     }
@@ -148,6 +149,7 @@ public class ActivationCodeService {
             return Integer.MAX_VALUE;
         }
 
+        // Redis定时任务会自动更新过期状态，这里直接查询即可
         Integer extra = userActivationMapper.getActiveExtraCategories(userId);
         return BASE_CATEGORY_LIMIT + (extra != null ? extra : 0);
     }

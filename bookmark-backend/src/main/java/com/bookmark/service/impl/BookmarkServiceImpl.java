@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
@@ -137,7 +138,6 @@ public class BookmarkServiceImpl implements BookmarkService {
             bookmark.setIsFavorite(request.getIsFavorite());
 
         bookmarkMapper.updateById(bookmark);
-
         // 同步到 Elasticsearch
         searchService.syncBookmark(bookmark);
 
@@ -153,7 +153,20 @@ public class BookmarkServiceImpl implements BookmarkService {
             throw new RuntimeException("书签不存在或无权限");
         }
 
-        bookmarkMapper.deleteById(id);
+        // 使用 CompletableFuture.runAsync 异步执行删除操作
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+            // 先从 Elasticsearch 删除
+            searchService.deleteBookmark(id);
+            // 再从数据库删除
+            bookmarkMapper.deleteById(id);
+        });
+
+        // 等待异步操作完成，如果有异常则抛出
+        try {
+            future.join(); // join() 会等待完成并抛出未检查异常
+        } catch (Exception e) {
+            throw new RuntimeException("删除书签失败: " + e.getMessage(), e);
+        }
     }
 
     @Override

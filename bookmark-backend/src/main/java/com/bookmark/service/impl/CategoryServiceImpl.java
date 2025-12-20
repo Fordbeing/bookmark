@@ -9,6 +9,7 @@ import com.bookmark.entity.User;
 import com.bookmark.mapper.BookmarkMapper;
 import com.bookmark.mapper.CategoryMapper;
 import com.bookmark.service.ActivationCodeService;
+import com.bookmark.service.CategoryCacheService;
 import com.bookmark.service.CategoryService;
 import com.bookmark.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     private ActivationCodeService activationCodeService;
+
+    @Autowired
+    private CategoryCacheService categoryCacheService;
 
     @Override
     public Category createCategory(CategoryRequest request) {
@@ -61,6 +65,10 @@ public class CategoryServiceImpl implements CategoryService {
         category.setSortOrder(0);
 
         categoryMapper.insert(category);
+
+        // 刷新缓存
+        categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+
         return category;
     }
 
@@ -81,6 +89,10 @@ public class CategoryServiceImpl implements CategoryService {
             category.setIcon(request.getIcon());
 
         categoryMapper.updateById(category);
+
+        // 刷新缓存
+        categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+
         return category;
     }
 
@@ -100,13 +112,16 @@ public class CategoryServiceImpl implements CategoryService {
                 .set("category_id", null));
 
         categoryMapper.deleteById(id);
+
+        // 刷新缓存
+        categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
     }
 
     @Override
     public List<Category> getCategoryList() {
         User currentUser = userService.getCurrentUser();
-        return categoryMapper.selectList(new QueryWrapper<Category>()
-                .eq("user_id", currentUser.getId())
-                .orderByAsc("sort_order", "create_time"));
+
+        // 使用缓存获取分类列表
+        return categoryCacheService.getUserCategories(currentUser.getId());
     }
 }

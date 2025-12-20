@@ -1,8 +1,14 @@
+# =====================================================
+# 开发环境配置 (Development)
+# 生产环境请使用 application-prod.yml
+# 启动命令: mvn spring-boot:run (默认开发环境)
+# =====================================================
+
 spring:
   application:
     name: bookmark-backend
   
-  # 数据源配置
+  # 数据源配置 - 开发环境
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/bookmark_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true

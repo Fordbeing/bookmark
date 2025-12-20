@@ -4,6 +4,7 @@ import com.bookmark.entity.ActivationCode;
 import com.bookmark.entity.User;
 import com.bookmark.entity.UserActivation;
 import com.bookmark.service.ActivationCodeService;
+import com.bookmark.service.ActivationExpiryTask;
 import com.bookmark.service.UserService;
 import com.bookmark.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class ActivationCodeController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ActivationExpiryTask activationExpiryTask;
 
     /**
      * 创建激活码（仅管理员）
@@ -61,6 +65,10 @@ public class ActivationCodeController {
         }
 
         UserActivation activation = activationCodeService.redeemCode(code);
+
+        // 将激活码加入 Redis 过期队列
+        activationExpiryTask.addToExpiryQueue(activation.getId(), activation.getExpireTime());
+
         return Result.success("激活码兑换成功", activation);
     }
 

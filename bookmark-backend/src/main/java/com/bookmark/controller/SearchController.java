@@ -25,10 +25,14 @@ public class SearchController {
     private final UserService userService;
 
     @GetMapping
-    @Operation(summary = "搜索书签")
-    public Result<List<BookmarkDocument>> search(@RequestParam String keyword) {
+    @Operation(summary = "搜索书签（默认混合语义搜索）")
+    public Result<List<BookmarkDocument>> search(
+            @RequestParam String keyword,
+            @RequestParam(required = false, defaultValue = "hybrid") String mode) {
         User currentUser = userService.getCurrentUser();
-        List<BookmarkDocument> results = searchService.search(currentUser.getId(), keyword);
+
+        List<BookmarkDocument> results;
+        results = searchService.search(currentUser.getId(), keyword);
         return Result.success(results);
     }
 }

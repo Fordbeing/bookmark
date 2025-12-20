@@ -126,6 +126,12 @@ CREATE TABLE activation_code (
 );
 
 ALTER TABLE user ADD COLUMN is_admin TINYINT DEFAULT 0;
+-- 修复激活码表缺少 update_time 字段的问题
+
+
+ALTER TABLE activation_code 
+ADD COLUMN update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间';
+
 
 -- 插入测试数据 (可选)
 -- 密码: 123456 (BCrypt加密后)

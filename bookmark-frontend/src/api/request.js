@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
-// 创建axios实例
+// 根据环境自动选择 API 地址
+// 开发环境: .env.development -> http://localhost:8080/api
+// 生产环境: .env.production -> /api (使用Nginx反向代理)
 const request = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
     timeout: 10000
 });
 
