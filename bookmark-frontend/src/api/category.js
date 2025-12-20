@@ -31,3 +31,11 @@ export const updateCategoryAPI = (id, data) => {
 export const deleteCategoryAPI = (id) => {
     return request.delete(`/categories/${id}`);
 };
+
+/**
+ * 更新分类排序
+ * @param {Array<Number>} categoryIds - 分类ID列表，按新顺序排列
+ */
+export const updateCategorySortAPI = (categoryIds) => {
+    return request.put('/categories/sort', categoryIds);
+};

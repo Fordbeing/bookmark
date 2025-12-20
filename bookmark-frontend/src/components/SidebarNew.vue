@@ -120,9 +120,15 @@
         </div>
         <div v-show="categoryExpanded" class="space-y-0.5 mt-1">
           <div 
-            v-for="category in categories" 
+            v-for="(category, index) in categories" 
             :key="category.id"
             class="group relative"
+            draggable="true"
+            @dragstart="handleDragStart($event, index)"
+            @dragover.prevent="handleDragOver($event, index)"
+            @drop="handleDrop($event, index)"
+            @dragend="handleDragEnd"
+            :class="{ 'opacity-50': draggedIndex === index, 'border-t-2 border-blue-400': dragOverIndex === index }"
           >
             <button 
               @click="selectCategory(category.id)"
@@ -133,6 +139,7 @@
                   : 'text-white/80 hover:bg-white/10 hover:text-white'
               ]"
             >
+              <span class="w-5 text-center cursor-grab">⣿</span>
               <span class="w-5 text-center">{{ category.icon || '📁' }}</span>
               <span class="flex-1 text-left truncate">{{ category.name }}</span>
               <span class="text-xs bg-white/15 px-2 py-0.5 rounded-full group-hover:hidden">{{ category.count || 0 }}</span>
@@ -167,19 +174,24 @@
           更多功能
         </div>
         <div v-show="otherExpanded" class="space-y-0.5 mt-1">
+          <button 
+            @click="emit('open-extension')"
+            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200"
+          >
+            <span class="w-5 text-center">🔌</span>
+            <span>浏览器插件</span>
+            <span class="ml-auto text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded font-bold">NEW</span>
+          </button>
+          <button 
+            @click="emit('open-data-management')"
+            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200"
+          >
+            <span class="w-5 text-center">📤</span>
+            <span>导入导出</span>
+          </button>
           <button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200">
             <span class="w-5 text-center">📊</span>
             <span>数据统计</span>
-            <span class="ml-auto text-[10px] bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded font-bold">SOON</span>
-          </button>
-          <button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200">
-            <span class="w-5 text-center">📤</span>
-            <span>导入导出</span>
-            <span class="ml-auto text-[10px] bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded font-bold">SOON</span>
-          </button>
-          <button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200">
-            <span class="w-5 text-center">🔌</span>
-            <span>浏览器插件</span>
             <span class="ml-auto text-[10px] bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded font-bold">SOON</span>
           </button>
         </div>
@@ -262,9 +274,9 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { getCategoryListAPI, updateCategoryAPI, deleteCategoryAPI } from '../api/category';
+import { getCategoryListAPI, updateCategoryAPI, deleteCategoryAPI, updateCategorySortAPI } from '../api/category';
 
-const emit = defineEmits(['open-settings', 'open-profile', 'category-select', 'filter-favorites', 'filter-trash', 'add-category', 'category-deleted']);
+const emit = defineEmits(['open-settings', 'open-profile', 'open-extension', 'open-data-management', 'category-select', 'filter-favorites', 'filter-trash', 'add-category', 'category-deleted']);
 
 // 定义props以接收书签数据
 const props = defineProps({
@@ -295,6 +307,57 @@ const totalBookmarks = computed(() => props.bookmarks.length);
 
 // 计算分类数量
 const categoryCount = computed(() => categories.value.length);
+
+// 拖拽排序相关
+const draggedIndex = ref(null);
+const dragOverIndex = ref(null);
+
+const handleDragStart = (event, index) => {
+  draggedIndex.value = index;
+  event.dataTransfer.effectAllowed = 'move';
+};
+
+const handleDragOver = (event, index) => {
+  if (draggedIndex.value !== null && draggedIndex.value !== index) {
+    dragOverIndex.value = index;
+  }
+};
+
+const handleDrop = async (event, index) => {
+  if (draggedIndex.value === null || draggedIndex.value === index) {
+    draggedIndex.value = null;
+    dragOverIndex.value = null;
+    return;
+  }
+
+  // 重新排列数组
+  const draggedItem = categories.value[draggedIndex.value];
+  const newCategories = [...categories.value];
+  newCategories.splice(draggedIndex.value, 1);
+  newCategories.splice(index, 0, draggedItem);
+  categories.value = newCategories;
+
+  // 重置拖拽状态
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+
+  // 保存新顺序到后端
+  try {
+    const categoryIds = newCategories.map(c => c.id);
+    await updateCategorySortAPI(categoryIds);
+    ElMessage.success('分类排序已保存');
+  } catch (error) {
+    console.error('保存排序失败:', error);
+    ElMessage.error('保存排序失败');
+    // 重新加载恢复原顺序
+    await loadCategories();
+  }
+};
+
+const handleDragEnd = () => {
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
 
 // 加载分类列表
 const loadCategories = async () => {

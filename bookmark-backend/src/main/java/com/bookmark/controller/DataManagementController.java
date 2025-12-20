@@ -91,11 +91,20 @@ public class DataManagementController {
     }
 
     /**
-     * 清除所有用户数据
+     * 清除所有用户数据（需要密码验证）
      */
     @DeleteMapping("/clear")
-    public Result<Void> clearAllData() {
-        dataManagementService.clearAllData();
-        return Result.success("所有数据已清除", null);
+    public Result<Void> clearAllData(@RequestBody java.util.Map<String, String> request) {
+        String password = request.get("password");
+        if (password == null || password.isEmpty()) {
+            return Result.error(400, "请输入密码");
+        }
+
+        boolean success = dataManagementService.clearAllDataWithPasswordVerification(password);
+        if (success) {
+            return Result.success("所有数据已清除", null);
+        } else {
+            return Result.error(401, "密码错误");
+        }
     }
 }

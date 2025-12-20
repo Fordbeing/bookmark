@@ -40,4 +40,10 @@ public class CategoryController {
         categoryService.deleteCategory(id);
         return Result.success("分类删除成功", null);
     }
+
+    @PutMapping("/sort")
+    public Result<Void> updateCategorySort(@RequestBody List<Long> categoryIds) {
+        categoryService.updateCategorySortOrder(categoryIds);
+        return Result.success("分类排序更新成功", null);
+    }
 }

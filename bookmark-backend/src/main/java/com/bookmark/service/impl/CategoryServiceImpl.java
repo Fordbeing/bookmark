@@ -124,4 +124,24 @@ public class CategoryServiceImpl implements CategoryService {
         // 使用缓存获取分类列表
         return categoryCacheService.getUserCategories(currentUser.getId());
     }
+
+    @Override
+    public void updateCategorySortOrder(List<Long> categoryIds) {
+        User currentUser = userService.getCurrentUser();
+
+        // 批量更新sortOrder
+        for (int i = 0; i < categoryIds.size(); i++) {
+            Long categoryId = categoryIds.get(i);
+            Category category = categoryMapper.selectById(categoryId);
+
+            // 确保分类属于当前用户
+            if (category != null && category.getUserId().equals(currentUser.getId())) {
+                category.setSortOrder(i);
+                categoryMapper.updateById(category);
+            }
+        }
+
+        // 刷新 Redis 缓存
+        categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+    }
 }

@@ -33,10 +33,11 @@ export const importBookmarksFileAPI = (file, type) => {
 };
 
 /**
- * 清除所有用户数据
+ * 清除所有用户数据（需要密码验证）
+ * @param {String} password - 用户密码
  */
-export const clearAllDataAPI = () => {
-    return request.delete('/data/clear');
+export const clearAllDataAPI = (password) => {
+    return request.delete('/data/clear', { data: { password } });
 };
 
 /**

@@ -12,6 +12,8 @@
       ref="sidebarRef" 
       @open-settings="isSettingsVisible = true" 
       @open-profile="handleProfileClick" 
+      @open-extension="isExtensionVisible = true"
+      @open-data-management="isDataManagementVisible = true"
       @category-select="handleCategoryFilter"
       @filter-favorites="handleFavoriteFilter"
       @filter-trash="handleTrashFilter"
@@ -311,6 +313,17 @@
         @logout="handleLogout"
       />
 
+      <!-- 浏览器扩展页面 -->
+      <ExtensionPage 
+        v-model="isExtensionVisible"
+      />
+
+      <!-- 数据管理页面 -->
+      <DataManagementPage 
+        v-model="isDataManagementVisible"
+        @data-changed="handleDataChanged"
+      />
+
       <!-- 添加分类弹窗 -->
       <AddCategoryModal 
         v-model="isCategoryModalVisible"
@@ -345,6 +358,8 @@ import SettingsPage from "./components/SettingsPage.vue";
 import AuthPage from "./components/AuthPage.vue";
 import ProfilePage from "./components/ProfilePage.vue";
 import AddCategoryModal from "./components/AddCategoryModal.vue";
+import ExtensionPage from "./components/ExtensionPage.vue";
+import DataManagementPage from "./components/DataManagementPage.vue";
 
 const currentPage = ref('main'); // 'main' 或 'auth'
 const sidebarRef = ref(null);
@@ -358,6 +373,8 @@ const isEditModalVisible = ref(false);
 const isSettingsVisible = ref(false);
 const isProfileVisible = ref(false);
 const isCategoryModalVisible = ref(false);
+const isExtensionVisible = ref(false);
+const isDataManagementVisible = ref(false);
 const editingBookmark = ref(null);
 
 // 显示设置
@@ -532,6 +549,14 @@ const handleClearTrash = async () => {
 
 // 分类添加成功后刷新分类列表
 const handleCategoryAdded = () => {
+  if (sidebarRef.value) {
+    sidebarRef.value.loadCategories();
+  }
+};
+
+// 数据变更后刷新列表
+const handleDataChanged = () => {
+  fetchList();
   if (sidebarRef.value) {
     sidebarRef.value.loadCategories();
   }

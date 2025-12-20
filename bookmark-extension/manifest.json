@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "BookUtil - 书签管理助手",
+  "version": "1.0.0",
+  "description": "快速保存和管理您的书签，支持分类、标签和搜索功能",
+  "icons": {
+    "16": "icons/icon16.svg",
+    "32": "icons/icon32.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "32": "icons/icon32.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    },
+    "default_title": "BookUtil - 书签管理"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "notifications",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "save-bookmark": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "快速保存当前页面"
+    }
+  },
+  "host_permissions": [
+    "http://115.159.219.125:88/*",
+    "<all_urls>"
+  ]
+}

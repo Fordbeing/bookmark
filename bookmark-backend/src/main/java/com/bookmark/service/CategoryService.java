@@ -13,4 +13,6 @@ public interface CategoryService {
     void deleteCategory(Long id);
 
     List<Category> getCategoryList();
+
+    void updateCategorySortOrder(List<Long> categoryIds);
 }

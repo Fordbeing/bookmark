@@ -28,4 +28,12 @@ public interface DataManagementService {
      * 清除用户所有数据
      */
     void clearAllData();
+
+    /**
+     * 清除用户所有数据（带密码验证）
+     * 
+     * @param password 用户密码
+     * @return 验证是否成功
+     */
+    boolean clearAllDataWithPasswordVerification(String password);
 }

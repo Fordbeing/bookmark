@@ -1,0 +1,519 @@
+/* ===== CSS Variables ===== */
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: rgba(99, 102, 241, 0.1);
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+
+    --bg-primary: #0f0f23;
+    --bg-secondary: #1a1a2e;
+    --bg-tertiary: #252541;
+    --bg-card: #16213e;
+
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #6b7280;
+
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-radius: 12px;
+    --border-radius-sm: 8px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+    --transition: all 0.2s ease;
+}
+
+/* ===== Base Styles ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    width: 380px;
+    min-height: 480px;
+    max-height: 580px;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* ===== Header ===== */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.logo svg {
+    filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+}
+
+.btn-icon:hover {
+    background: var(--bg-tertiary);
+    color: var(--error);
+}
+
+/* ===== Views ===== */
+.view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* ===== Login Box ===== */
+.login-box {
+    text-align: center;
+}
+
+.login-box h2 {
+    font-size: 20px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.login-hint {
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* ===== Form Styles ===== */
+.form-group {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-group .optional {
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="url"],
+.form-group input[type="password"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-group textarea {
+    resize: none;
+    height: 72px;
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+/* ===== Checkbox ===== */
+.checkbox-group {
+    margin-top: 8px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.checkbox-label input:checked+.checkmark {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.checkbox-label input:checked+.checkmark::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    color: white;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* ===== Tabs ===== */
+.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 20px;
+    margin-bottom: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    margin: 16px 20px;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: var(--border-radius-sm);
+}
+
+.tab:hover {
+    color: var(--text-secondary);
+}
+
+.tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* ===== Tab Content ===== */
+.tab-content {
+    display: none;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+    max-height: calc(580px - 140px);
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ===== Search Box ===== */
+.search-box {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 12px 10px 40px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ===== Bookmark List ===== */
+.bookmark-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bookmark-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.bookmark-item:hover {
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.bookmark-favicon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bookmark-favicon img {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.bookmark-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.bookmark-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.bookmark-url {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bookmark-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bookmark-action-btn {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.bookmark-action-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--primary);
+}
+
+.bookmark-action-btn.favorite.active {
+    color: var(--warning);
+}
+
+.bookmark-action-btn.delete:hover {
+    color: var(--error);
+}
+
+/* ===== Loading ===== */
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+/* ===== Toast ===== */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 12px 24px;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.success {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.toast.error {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bookmark-item {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.bookmark-item:nth-child(1) {
+    animation-delay: 0.05s;
+}
+
+.bookmark-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.bookmark-item:nth-child(3) {
+    animation-delay: 0.15s;
+}
+
+.bookmark-item:nth-child(4) {
+    animation-delay: 0.2s;
+}
+
+.bookmark-item:nth-child(5) {
+    animation-delay: 0.25s;
+}

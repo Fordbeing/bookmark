@@ -131,6 +131,22 @@ public class DataManagementServiceImpl implements DataManagementService {
         log.info("清除用户所有数据: userId={}", userId);
     }
 
+    @Override
+    @Transactional
+    public boolean clearAllDataWithPasswordVerification(String password) {
+        User currentUser = userService.getCurrentUser();
+
+        // 验证密码
+        if (!org.springframework.security.crypto.bcrypt.BCrypt.checkpw(password, currentUser.getPassword())) {
+            log.warn("清除数据密码验证失败: userId={}", currentUser.getId());
+            return false;
+        }
+
+        // 密码正确，执行清除
+        clearAllData();
+        return true;
+    }
+
     /**
      * 从浏览器 HTML 格式导入书签
      */

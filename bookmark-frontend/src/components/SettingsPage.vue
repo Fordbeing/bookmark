@@ -133,187 +133,69 @@
         </div>
       </el-tab-pane>
 
-      <!-- 数据管理 -->
-      <el-tab-pane label="💾 数据管理" name="data">
-        <div class="space-y-4">
-          <!-- 导出区域 -->
-          <div class="bg-blue-50 p-4 rounded-lg">
-            <h3 class="font-medium text-gray-800 mb-2">⬇️ 导出数据</h3>
-            <p class="text-xs text-gray-600 mb-3">导出所有书签、分类和标签为 JSON 文件</p>
-            <el-button type="primary" @click="exportData" :loading="exportLoading">
-              <el-icon class="mr-1"><Download /></el-icon>导出书签
-            </el-button>
-          </div>
-
-          <!-- 导入区域 -->
-          <div class="bg-green-50 p-4 rounded-lg">
-            <h3 class="font-medium text-gray-800 mb-2">⬆️ 导入数据</h3>
-            <p class="text-xs text-gray-600 mb-3">支持从 Chrome、Edge 浏览器或本应用导出的 JSON 格式导入</p>
-            
-            <div class="flex gap-3 items-center mb-3">
-              <el-select v-model="importType" placeholder="选择导入源" style="width: 180px">
-                <el-option label="🌐 Chrome 浏览器" value="CHROME" />
-                <el-option label="🌊 Edge 浏览器" value="EDGE" />
-                <el-option label="📄 JSON 格式" value="JSON" />
-              </el-select>
-              <el-upload
-                ref="uploadRef"
-                action="#"
-                :accept="importType === 'JSON' ? '.json' : '.html'"
-                :auto-upload="false"
-                :on-change="handleFileChange"
-                :show-file-list="false"
-              >
-                <el-button type="success" :disabled="!importType">
-                  <el-icon class="mr-1"><Upload /></el-icon>选择文件
-                </el-button>
-              </el-upload>
-            </div>
-
-            <!-- 导入提示 -->
-            <div v-if="importType" class="text-xs text-gray-500 mb-2">
-              <template v-if="importType === 'CHROME'">
-                💡 在 Chrome 中打开 <code>chrome://bookmarks</code> → … → 导出书签
-              </template>
-              <template v-else-if="importType === 'EDGE'">
-                💡 在 Edge 中打开 <code>edge://favorites</code> → … → 导出收藏夹
-              </template>
-              <template v-else>
-                💡 选择本应用之前导出的 JSON 备份文件
-              </template>
-            </div>
-
-            <!-- 已选文件 -->
-            <div v-if="selectedFile" class="flex items-center gap-2 bg-white p-2 rounded border mt-2">
-              <el-icon><Document /></el-icon>
-              <span class="flex-1 truncate text-sm">{{ selectedFile.name }}</span>
-              <el-button type="primary" size="small" @click="doImport" :loading="importLoading">
-                开始导入
-              </el-button>
-              <el-button size="small" @click="selectedFile = null">取消</el-button>
-            </div>
-
-            <!-- 导入结果 -->
-            <div v-if="importResult" class="mt-3 p-3 rounded border" :class="importResult.successCount > 0 ? 'bg-green-100 border-green-300' : 'bg-yellow-100 border-yellow-300'">
-              <p class="text-sm font-medium">
-                ✅ 成功导入 {{ importResult.successCount }} 个书签
-                <span v-if="importResult.categoriesCreated > 0">，创建 {{ importResult.categoriesCreated }} 个分类</span>
-              </p>
-              <p v-if="importResult.skippedCount > 0" class="text-xs text-gray-600 mt-1">
-                跳过 {{ importResult.skippedCount }} 个重复项
-              </p>
-            </div>
-          </div>
-
-          <!-- 清除数据 -->
-          <div class="bg-red-50 p-4 rounded-lg flex justify-between items-center">
-            <div>
-              <h3 class="font-medium text-red-800">🗑️ 清除所有数据</h3>
-              <p class="text-xs text-red-600">此操作不可撤销，将删除所有书签、分类和标签</p>
-            </div>
-            <el-button type="danger" size="small" @click="clearAll">清除</el-button>
-          </div>
-        </div>
-      </el-tab-pane>
-
       <!-- 关于 -->
       <el-tab-pane label="ℹ️ 关于" name="about">
-        <div class="space-y-6">
+        <div class="about-container">
           <!-- 品牌区 -->
-          <div class="text-center bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-xl">
-            <div class="text-5xl mb-3">🔖</div>
-            <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">书签管理工具</h2>
-            <p class="text-gray-500 mt-1">Bookmark Manager Pro</p>
-            <div class="inline-block mt-3 px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-              v1.0.0 正式版
-            </div>
+          <div class="brand-section">
+            <div class="brand-icon">🔖</div>
+            <h2 class="brand-title">BookUtil</h2>
+            <p class="brand-subtitle">智能书签管理工具</p>
+            <span class="version-badge">v1.0.0</span>
           </div>
 
-          <!-- 功能亮点 -->
-          <div class="bg-gray-50 p-5 rounded-xl">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>✨</span> 功能亮点
-            </h3>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                <span class="text-2xl">🌐</span>
-                <div>
-                  <div class="font-medium text-gray-800">多端同步</div>
-                  <div class="text-xs text-gray-500">网页版 + 小程序</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                <span class="text-2xl">🔍</span>
-                <div>
-                  <div class="font-medium text-gray-800">全文搜索</div>
-                  <div class="text-xs text-gray-500">Elasticsearch 驱动</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                <span class="text-2xl">📁</span>
-                <div>
-                  <div class="font-medium text-gray-800">分类管理</div>
-                  <div class="text-xs text-gray-500">自定义分类 + 标签</div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm">
-                <span class="text-2xl">📥</span>
-                <div>
-                  <div class="font-medium text-gray-800">一键导入</div>
-                  <div class="text-xs text-gray-500">支持 Chrome/Edge</div>
+          <!-- 功能轮播 -->
+          <div class="feature-carousel">
+            <div class="carousel-track" ref="carouselTrack">
+              <div 
+                v-for="(slide, index) in featureSlides" 
+                :key="index"
+                class="carousel-slide"
+                :class="{ active: currentSlide === index }"
+              >
+                <span class="slide-icon">{{ slide.icon }}</span>
+                <div class="slide-content">
+                  <h4>{{ slide.title }}</h4>
+                  <p>{{ slide.desc }}</p>
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- 使用技巧 -->
-          <div class="bg-yellow-50 p-5 rounded-xl">
-            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <span>💡</span> 使用技巧
-            </h3>
-            <ul class="space-y-2 text-sm text-gray-700">
-              <li class="flex items-start gap-2">
-                <span class="text-yellow-500">●</span>
-                <span>粘贴网址后点击「快速添加」自动获取标题</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-yellow-500">●</span>
-                <span>点击书签卡片直接打开链接，右键更多操作</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-yellow-500">●</span>
-                <span>使用搜索框可搜索标题、网址和描述</span>
-              </li>
-              <li class="flex items-start gap-2">
-                <span class="text-yellow-500">●</span>
-                <span>微信小程序绑定手机号可实现数据互通</span>
-              </li>
-            </ul>
-          </div>
-
-          <!-- 版本信息 -->
-          <div class="flex justify-between items-center text-sm text-gray-500 px-2">
-            <div>
-              <span>开发者：</span>
-              <span class="font-medium text-gray-700">Bookmark Team</span>
-            </div>
-            <div>
-              <span>更新日期：</span>
-              <span class="font-medium text-gray-700">2024-12</span>
+            <div class="carousel-dots">
+              <button 
+                v-for="(slide, index) in featureSlides" 
+                :key="index"
+                class="dot"
+                :class="{ active: currentSlide === index }"
+                @click="goToSlide(index)"
+              />
             </div>
           </div>
 
-          <!-- 链接 -->
-          <div class="flex justify-center gap-4 pt-2">
-            <el-button link type="primary">
-              <el-icon class="mr-1"><Link /></el-icon>官方网站
-            </el-button>
-            <el-button link type="primary">
-              <el-icon class="mr-1"><ChatDotRound /></el-icon>反馈问题
-            </el-button>
-            <el-button link type="primary">
-              <el-icon class="mr-1"><Document /></el-icon>隐私政策
-            </el-button>
+          <!-- 核心特性 -->
+          <div class="highlights-grid">
+            <div class="highlight-item">
+              <span class="highlight-icon">🔍</span>
+              <span class="highlight-text">ES 全文搜索</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-icon">📱</span>
+              <span class="highlight-text">微信小程序</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-icon">🔌</span>
+              <span class="highlight-text">浏览器扩展</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-icon">📤</span>
+              <span class="highlight-text">导入导出</span>
+            </div>
+          </div>
+
+          <!-- 底部信息 -->
+          <div class="about-footer">
+            <span>© 2024 BookUtil Team</span>
+            <span>•</span>
+            <span>更新于 2024-12</span>
           </div>
         </div>
       </el-tab-pane>
@@ -333,12 +215,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, watch, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { UploadFilled, Download, Upload, Document, Link, ChatDotRound } from '@element-plus/icons-vue';
+import { Link, ChatDotRound } from '@element-plus/icons-vue';
 import { getTagListAPI, createTagAPI, updateTagAPI, deleteTagAPI } from '../api/tag';
 import { getSettingsAPI, updateSettingsAPI } from '../api/settings';
-import { downloadExportData, importBookmarksFileAPI, clearAllDataAPI } from '../api/dataManagement';
 
 const props = defineProps({
   modelValue: Boolean,
@@ -353,12 +234,41 @@ const newTagColor = ref('#6b7280');
 const tags = ref([]);
 const tagLoading = ref(false);
 
-// 数据管理相关
-const importType = ref('');
-const selectedFile = ref(null);
-const importLoading = ref(false);
-const exportLoading = ref(false);
-const importResult = ref(null);
+// 轮播相关
+const currentSlide = ref(0);
+const carouselTrack = ref(null);
+let carouselTimer = null;
+
+const featureSlides = [
+  { icon: '🚀', title: '快速添加', desc: '粘贴链接自动获取网页标题和描述' },
+  { icon: '📁', title: '分类管理', desc: '自定义分类整理书签，支持拖拽排序' },
+  { icon: '🏷️', title: '标签系统', desc: '自定义彩色标签，多维度管理书签' },
+  { icon: '⭐', title: '收藏夹', desc: '一键收藏重要书签，快速访问' },
+  { icon: '🔍', title: '全文搜索', desc: 'ES搜索引擎，标题/网址/描述全覆盖' },
+  { icon: '🔌', title: '浏览器扩展', desc: '一键保存当前页面，快捷键操作' },
+];
+
+const goToSlide = (index) => {
+  currentSlide.value = index;
+  resetCarouselTimer();
+};
+
+const nextSlide = () => {
+  currentSlide.value = (currentSlide.value + 1) % featureSlides.length;
+};
+
+const resetCarouselTimer = () => {
+  if (carouselTimer) clearInterval(carouselTimer);
+  carouselTimer = setInterval(nextSlide, 4000);
+};
+
+onMounted(() => {
+  resetCarouselTimer();
+});
+
+onUnmounted(() => {
+  if (carouselTimer) clearInterval(carouselTimer);
+});
 
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newVal) => {
@@ -622,5 +532,168 @@ onMounted(() => {
 
 .setting-item:hover {
   transform: translateX(4px);
+}
+
+/* 关于页面样式 */
+.about-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.brand-section {
+  text-align: center;
+  background: linear-gradient(135deg, #eff6ff, #faf5ff);
+  padding: 24px;
+  border-radius: 16px;
+}
+
+.brand-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.brand-title {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 0;
+}
+
+.brand-subtitle {
+  color: #6b7280;
+  margin: 4px 0 12px 0;
+  font-size: 14px;
+}
+
+.version-badge {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 功能轮播 */
+.feature-carousel {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-radius: 16px;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.carousel-track {
+  position: relative;
+  min-height: 70px;
+}
+
+.carousel-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.5s ease;
+  pointer-events: none;
+}
+
+.carousel-slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.slide-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.slide-content h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 4px 0;
+}
+
+.slide-content p {
+  font-size: 13px;
+  color: #a16207;
+  margin: 0;
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(146, 64, 14, 0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  width: 24px;
+  border-radius: 4px;
+  background: #92400e;
+}
+
+/* 核心特性 */
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.highlight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.highlight-item:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.highlight-icon {
+  font-size: 24px;
+}
+
+.highlight-text {
+  font-size: 12px;
+  color: #4b5563;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 底部信息 */
+.about-footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #9ca3af;
 }
 </style>
