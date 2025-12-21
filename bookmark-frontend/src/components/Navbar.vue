@@ -24,17 +24,17 @@
     
     <!-- 右侧按钮 -->
     <div class="flex items-center gap-1 w-48 justify-end">
-      <!-- 通知按钮 -->
+      <!-- 公告按钮 -->
       <div class="relative">
         <button 
           @click="toggleNotifications"
           class="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all relative" 
-          title="通知"
+          title="系统公告"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
           </svg>
-          <!-- 红点徽章 -->
+          <!-- 新公告红点 -->
           <span 
             v-if="unreadCount > 0" 
             class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse"
@@ -43,15 +43,18 @@
           </span>
         </button>
 
-        <!-- 通知下拉弹窗 -->
+        <!-- 公告下拉弹窗 -->
         <transition name="dropdown">
           <div 
             v-if="showNotifications" 
-            class="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+            class="absolute right-0 top-12 w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
           >
             <!-- 弹窗头部 -->
             <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-              <span class="font-semibold">消息通知</span>
+              <span class="font-semibold flex items-center gap-2">
+                <span class="text-lg">📢</span>
+                系统公告
+              </span>
               <button 
                 v-if="unreadCount > 0"
                 @click="markAllAsRead" 
@@ -61,39 +64,58 @@
               </button>
             </div>
 
-            <!-- 通知列表 -->
-            <div class="max-h-80 overflow-y-auto">
-              <div v-if="notifications.length === 0" class="py-8 text-center text-gray-400">
-                <span class="text-3xl mb-2 block">🔔</span>
-                <p class="text-sm">暂无通知</p>
+            <!-- 公告列表 -->
+            <div class="max-h-96 overflow-y-auto">
+              <!-- 加载中 -->
+              <div v-if="loadingAnnouncements" class="py-8 text-center text-gray-400">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p class="text-sm">加载中...</p>
               </div>
+              <!-- 无公告 -->
+              <div v-else-if="announcements.length === 0" class="py-8 text-center text-gray-400">
+                <span class="text-3xl mb-2 block">📭</span>
+                <p class="text-sm">暂无公告</p>
+              </div>
+              <!-- 公告列表 -->
               <div 
                 v-else
-                v-for="item in notifications" 
+                v-for="item in announcements" 
                 :key="item.id"
-                @click="handleNotificationClick(item)"
+                @click="openAnnouncementDetail(item)"
                 :class="[
-                  'px-4 py-3 border-b border-gray-50 cursor-pointer transition-all hover:bg-gray-50',
-                  !item.read ? 'bg-blue-50/50' : ''
+                  'px-4 py-4 border-b border-gray-50 cursor-pointer transition-all hover:bg-blue-50/50',
+                  !isRead(item.id) ? 'bg-blue-50/30' : ''
                 ]"
               >
                 <div class="flex items-start gap-3">
-                  <span class="text-lg flex-shrink-0">{{ item.icon }}</span>
+                  <!-- 公告类型图标 -->
+                  <span class="text-2xl flex-shrink-0">{{ getTypeIcon(item.type) }}</span>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 line-clamp-1">{{ item.title }}</p>
+                    <div class="flex items-center gap-2 mb-1">
+                      <el-tag :type="getTypeTagType(item.type)" size="small" effect="plain">
+                        {{ getTypeLabel(item.type) }}
+                      </el-tag>
+                      <span v-if="!isRead(item.id)" class="w-2 h-2 bg-red-500 rounded-full"></span>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-800 line-clamp-1">{{ item.title }}</p>
                     <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ item.content }}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">{{ item.time }}</p>
+                    <p class="text-[10px] text-gray-400 mt-2">{{ formatTime(item.createTime) }}</p>
                   </div>
-                  <span v-if="!item.read" class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
                 </div>
               </div>
             </div>
 
             <!-- 弹窗底部 -->
-            <div class="px-4 py-2 bg-gray-50 border-t border-gray-100">
+            <div class="px-4 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <button 
+                @click="refreshAnnouncements"
+                class="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+              >
+                <span class="text-sm">🔄</span> 刷新
+              </button>
               <button 
                 @click="showNotifications = false"
-                class="w-full text-center text-sm text-gray-500 hover:text-blue-600 transition-colors py-1"
+                class="text-sm text-gray-500 hover:text-gray-700 transition-colors"
               >
                 关闭
               </button>
@@ -124,6 +146,29 @@
     </div>
   </nav>
 
+  <!-- 公告详情弹窗 -->
+  <el-dialog
+    v-model="showAnnouncementDetail"
+    :title="currentAnnouncement?.title || '公告详情'"
+    width="500px"
+    :close-on-click-modal="true"
+  >
+    <div v-if="currentAnnouncement" class="announcement-detail">
+      <div class="flex items-center gap-2 mb-4">
+        <el-tag :type="getTypeTagType(currentAnnouncement.type)" effect="plain">
+          {{ getTypeLabel(currentAnnouncement.type) }}
+        </el-tag>
+        <span class="text-sm text-gray-400">{{ formatTime(currentAnnouncement.createTime) }}</span>
+      </div>
+      <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">
+        {{ currentAnnouncement.content }}
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="showAnnouncementDetail = false">关闭</el-button>
+    </template>
+  </el-dialog>
+
   <!-- 点击外部关闭弹窗 -->
   <div 
     v-if="showNotifications" 
@@ -133,8 +178,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { searchBookmarksAPI } from '../api/search';
+import { getAnnouncementsAPI } from '../api/announcement';
 
 const emit = defineEmits(['toggle-settings', 'open-profile', 'search-results']);
 
@@ -142,53 +188,148 @@ const searchKeyword = ref('');
 const searching = ref(false);
 let searchTimeout = null;
 
-// 通知相关状态
+// 公告相关状态
 const showNotifications = ref(false);
-const notifications = ref([
-  {
-    id: 1,
-    icon: '🎉',
-    title: '欢迎使用书签管理',
-    content: '感谢您使用书签管理应用，祝您使用愉快！',
-    time: '刚刚',
-    read: false
-  },
-  {
-    id: 2,
-    icon: '💡',
-    title: '小技巧',
-    content: '长按书签卡片可以快速进行批量操作哦',
-    time: '1小时前',
-    read: false
-  },
-  {
-    id: 3,
-    icon: '🔄',
-    title: '系统更新',
-    content: '我们优化了页面加载速度和交互体验',
-    time: '昨天',
-    read: true
-  }
-]);
+const showAnnouncementDetail = ref(false);
+const currentAnnouncement = ref(null);
+const announcements = ref([]);
+const loadingAnnouncements = ref(false);
+const readIds = ref(JSON.parse(localStorage.getItem('readAnnouncementIds') || '[]'));
+
+// 轮询定时器
+let pollingTimer = null;
+const POLLING_INTERVAL = 60000; // 60秒轮询一次
 
 // 计算未读数量
 const unreadCount = computed(() => {
-  return notifications.value.filter(n => !n.read).length;
+  return announcements.value.filter(a => !isRead(a.id)).length;
 });
 
-// 切换通知弹窗
-const toggleNotifications = () => {
-  showNotifications.value = !showNotifications.value;
+// 判断是否已读
+const isRead = (id) => {
+  return readIds.value.includes(id);
+};
+
+// 标记已读
+const markAsRead = (id) => {
+  if (!readIds.value.includes(id)) {
+    readIds.value.push(id);
+    localStorage.setItem('readAnnouncementIds', JSON.stringify(readIds.value));
+  }
 };
 
 // 标记全部已读
 const markAllAsRead = () => {
-  notifications.value.forEach(n => n.read = true);
+  const allIds = announcements.value.map(a => a.id);
+  readIds.value = [...new Set([...readIds.value, ...allIds])];
+  localStorage.setItem('readAnnouncementIds', JSON.stringify(readIds.value));
 };
 
-// 点击通知项
-const handleNotificationClick = (item) => {
-  item.read = true;
+// 获取公告类型图标
+const getTypeIcon = (type) => {
+  const icons = {
+    'info': 'ℹ️',
+    'warning': '⚠️',
+    'maintenance': '🔧',
+    'update': '🎉'
+  };
+  return icons[type] || '📢';
+};
+
+// 获取公告类型标签类型
+const getTypeTagType = (type) => {
+  const types = {
+    'info': 'info',
+    'warning': 'warning',
+    'maintenance': 'danger',
+    'update': 'success'
+  };
+  return types[type] || 'info';
+};
+
+// 获取公告类型标签
+const getTypeLabel = (type) => {
+  const labels = {
+    'info': '通知',
+    'warning': '警告',
+    'maintenance': '维护',
+    'update': '更新'
+  };
+  return labels[type] || '公告';
+};
+
+// 格式化时间
+const formatTime = (time) => {
+  if (!time) return '';
+  const date = new Date(time);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 7) return `${days}天前`;
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+};
+
+// 切换通知弹窗
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value;
+  if (showNotifications.value && announcements.value.length === 0) {
+    fetchAnnouncements();
+  }
+};
+
+// 获取公告列表
+const fetchAnnouncements = async () => {
+  loadingAnnouncements.value = true;
+  try {
+    const result = await getAnnouncementsAPI(10);
+    if (result.data) {
+      const oldIds = new Set(announcements.value.map(a => a.id));
+      announcements.value = result.data;
+      
+      // 检查是否有新公告
+      const newAnnouncements = result.data.filter(a => !oldIds.has(a.id) && !isRead(a.id));
+      if (newAnnouncements.length > 0 && oldIds.size > 0) {
+        // 有新公告时可以显示提示
+        console.log('有新公告:', newAnnouncements.length);
+      }
+    }
+  } catch (error) {
+    console.error('获取公告失败:', error);
+  } finally {
+    loadingAnnouncements.value = false;
+  }
+};
+
+// 刷新公告
+const refreshAnnouncements = () => {
+  fetchAnnouncements();
+};
+
+// 打开公告详情
+const openAnnouncementDetail = (item) => {
+  currentAnnouncement.value = item;
+  showAnnouncementDetail.value = true;
+  markAsRead(item.id);
+};
+
+// 开始轮询
+const startPolling = () => {
+  fetchAnnouncements();
+  pollingTimer = setInterval(fetchAnnouncements, POLLING_INTERVAL);
+};
+
+// 停止轮询
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer);
+    pollingTimer = null;
+  }
 };
 
 const handleSettingsClick = () => {
@@ -222,6 +363,14 @@ const handleSearch = () => {
     }
   }, 300);
 };
+
+onMounted(() => {
+  startPolling();
+});
+
+onUnmounted(() => {
+  stopPolling();
+});
 </script>
 
 <style scoped>
@@ -235,5 +384,9 @@ const handleSearch = () => {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.announcement-detail {
+  min-height: 100px;
 }
 </style>

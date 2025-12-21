@@ -20,6 +20,7 @@
       @add-category="isCategoryModalVisible = true"
       :bookmarks="bookmarks"
       :showStats="showStats"
+      :allBookmarksCount="allBookmarksCount"
     />
     <div class="flex-1 transition-all duration-300 ease-in-out" :style="{ marginLeft: sidebarMargin }">
       <Navbar @toggle-settings="isSettingsVisible = true" @open-profile="handleProfileClick" @search-results="handleSearchResults" />
@@ -261,6 +262,29 @@
               </div>
             </div>
           </div>
+          
+          <!-- 懒加载：加载更多区域 -->
+          <div v-if="currentFilter.type !== 'trash' && !initLoading && filteredBookmarks.length > 0" class="mt-8 flex flex-col items-center">
+            <!-- 加载中 -->
+            <div v-if="loadingMore" class="flex items-center gap-2 text-gray-500">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>加载中...</span>
+            </div>
+            <!-- 加载更多按钮 -->
+            <el-button 
+              v-else-if="hasMore" 
+              type="primary" 
+              plain 
+              @click="loadMore"
+              class="mt-4"
+            >
+              加载更多 (已加载 {{ bookmarks.length }} / {{ totalBookmarks }})
+            </el-button>
+            <!-- 已加载全部 -->
+            <div v-else class="text-gray-400 text-sm py-4">
+              ✓ 已加载全部 {{ totalBookmarks }} 个书签
+            </div>
+          </div>
         </div>
       </div>
 
@@ -334,7 +358,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { 
   getBookmarkListAPI, 
   createBookmarkAPI, 
@@ -412,6 +436,14 @@ const bookmarks = ref([]);
 const categories = ref([]);
 const currentFilter = ref({ type: 'all', value: null }); // 'all', 'category', 'favorite'
 
+// 懒加载分页状态
+const bookmarkPage = ref(1);
+const pageSize = ref(50);
+const hasMore = ref(true);
+const loadingMore = ref(false);
+const totalBookmarks = ref(0);
+const allBookmarksCount = ref(0); // 全部书签总数（不受过滤影响，用于侧边栏统计）
+
 // 过滤和排序书签
 const filteredBookmarks = computed(() => {
   // 如果有搜索结果，直接返回搜索结果
@@ -419,18 +451,10 @@ const filteredBookmarks = computed(() => {
     return searchResults.value;
   }
   
+  // 服务器端已经过滤了分类和收藏，直接使用 bookmarks
   let result = bookmarks.value;
   
-  // 过滤
-  if (currentFilter.value.type === 'category') {
-    if (currentFilter.value.value) {
-      result = result.filter(b => b.categoryId === currentFilter.value.value);
-    }
-  } else if (currentFilter.value.type === 'favorite') {
-    result = result.filter(b => b.isFavorite === 1);
-  }
-  
-  // 排序
+  // 排序（客户端排序）
   result = [...result].sort((a, b) => {
     let valA, valB;
     if (sortBy.value === 'createTime') {
@@ -452,6 +476,9 @@ const filteredBookmarks = computed(() => {
 
 // 处理分类过滤
 const handleCategoryFilter = (categoryId) => {
+  // 清空搜索结果
+  searchResults.value = null;
+  
   if (categoryId === null) {
     console.log('显示所有书签');
     currentFilter.value = { type: 'all', value: null };
@@ -459,12 +486,17 @@ const handleCategoryFilter = (categoryId) => {
     console.log('过滤分类:', categoryId);
     currentFilter.value = { type: 'category', value: categoryId };
   }
+  // 重新从服务器加载（带分类筛选）
+  fetchList(true);
 };
 
 // 处理星标过滤
 const handleFavoriteFilter = () => {
   console.log('显示星标书签');
+  searchResults.value = null;
   currentFilter.value = { type: 'favorite', value: null };
+  // 重新从服务器加载（带收藏筛选）
+  fetchList(true);
 };
 
 // 处理回收站过滤
@@ -593,23 +625,66 @@ const handleAdd = async () => {
   }
 };
 
-const fetchList = async () => {
+const fetchList = async (reset = true) => {
   try {
-    initLoading.value = true;
-    const result = await getBookmarkListAPI({ page: 1, size: 100 });
+    if (reset) {
+      initLoading.value = true;
+      bookmarkPage.value = 1;
+      bookmarks.value = [];
+      hasMore.value = true;
+    }
+    
+    // 构建 API 参数（根据当前过滤条件）
+    const params = { 
+      page: bookmarkPage.value, 
+      size: pageSize.value 
+    };
+    
+    // 根据过滤类型添加参数
+    if (currentFilter.value.type === 'category' && currentFilter.value.value) {
+      params.categoryId = currentFilter.value.value;
+    } else if (currentFilter.value.type === 'favorite') {
+      params.isFavorite = 1;
+    }
+    
+    const result = await getBookmarkListAPI(params);
     if (result.data && result.data.list) {
-      bookmarks.value = result.data.list;
+      if (reset) {
+        bookmarks.value = result.data.list;
+      } else {
+        bookmarks.value = [...bookmarks.value, ...result.data.list];
+      }
+      totalBookmarks.value = result.data.total || result.data.list.length;
+      // 判断是否还有更多数据
+      hasMore.value = bookmarks.value.length < totalBookmarks.value;
+      
+      // 当加载全部书签（非过滤状态）时，更新总数统计
+      if (currentFilter.value.type === 'all' && reset) {
+        allBookmarksCount.value = totalBookmarks.value;
+      }
     }
     // 同时加载分类列表
-    const categoryResult = await getCategoryListAPI();
-    if (categoryResult.data) {
-      categories.value = categoryResult.data;
+    if (reset) {
+      const categoryResult = await getCategoryListAPI();
+      if (categoryResult.data) {
+        categories.value = categoryResult.data;
+      }
     }
   } catch (error) {
     console.error('获取书签列表失败:', error);
   } finally {
     initLoading.value = false;
+    loadingMore.value = false;
   }
+};
+
+// 加载更多书签（懒加载）
+const loadMore = async () => {
+  if (!hasMore.value || loadingMore.value || initLoading.value) return;
+  
+  loadingMore.value = true;
+  bookmarkPage.value++;
+  await fetchList(false);
 };
 
 const openUrl = async (url, bookmarkId) => {
@@ -906,6 +981,21 @@ const handleLoginSuccess = (userData) => {
   }
 };
 
+// 滚动加载更多
+const handleScroll = () => {
+  // 检查是否滚动到底部附近（距底部 300px 时触发）
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight;
+  const clientHeight = window.innerHeight;
+  
+  if (scrollTop + clientHeight >= scrollHeight - 300) {
+    // 只在非搜索、非回收站模式下触发懒加载
+    if (currentFilter.value.type !== 'trash' && searchResults.value === null) {
+      loadMore();
+    }
+  }
+};
+
 onMounted(() => {
   loadSavedSettings();
   
@@ -918,6 +1008,14 @@ onMounted(() => {
     // 已登录，加载书签列表
     fetchList();
   }
+  
+  // 添加滚动监听器（无限滚动）
+  window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  // 移除滚动监听器
+  window.removeEventListener('scroll', handleScroll);
 });
 </script>
 

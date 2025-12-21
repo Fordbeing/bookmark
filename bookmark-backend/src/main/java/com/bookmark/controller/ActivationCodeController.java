@@ -81,7 +81,13 @@ public class ActivationCodeController {
 
         Map<String, Object> limits = new HashMap<>();
         limits.put("bookmarkLimit", activationCodeService.getUserBookmarkLimit(currentUser.getId()));
+        limits.put("bookmarkBase", activationCodeService.getUserBaseBookmarkLimit(currentUser.getId()));
+        limits.put("bookmarkExtra", activationCodeService.getUserExtraBookmarkLimit(currentUser.getId()));
+
         limits.put("categoryLimit", activationCodeService.getUserCategoryLimit(currentUser.getId()));
+        limits.put("categoryBase", activationCodeService.getUserBaseCategoryLimit(currentUser.getId()));
+        limits.put("categoryExtra", activationCodeService.getUserExtraCategoryLimit(currentUser.getId()));
+
         limits.put("isAdmin", currentUser.getIsAdmin() != null && currentUser.getIsAdmin() == 1);
         limits.put("activations", activationCodeService.getUserActivations(currentUser.getId()));
 

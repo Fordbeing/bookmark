@@ -1,7 +1,9 @@
 package com.bookmark.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.bookmark.entity.Bookmark;
 import com.bookmark.entity.Category;
+import com.bookmark.mapper.BookmarkMapper;
 import com.bookmark.mapper.CategoryMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +28,7 @@ public class CategoryCacheService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final CategoryMapper categoryMapper;
+    private final BookmarkMapper bookmarkMapper;
     private final ObjectMapper objectMapper;
 
     /**
@@ -67,6 +70,9 @@ public class CategoryCacheService {
                             .orderByAsc("sort_order")
                             .orderByDesc("create_time"));
 
+            // 为每个分类计算书签数量
+            populateBookmarkCounts(categories, userId);
+
             // 3. 写入 Redis 缓存
             if (categories != null && !categories.isEmpty()) {
                 String jsonData = objectMapper.writeValueAsString(categories);
@@ -104,11 +110,14 @@ public class CategoryCacheService {
                             .orderByAsc("sort_order")
                             .orderByDesc("create_time"));
 
+            // 为每个分类计算书签数量
+            populateBookmarkCounts(categories, userId);
+
             // 更新到 Redis
             if (categories != null && !categories.isEmpty()) {
                 String jsonData = objectMapper.writeValueAsString(categories);
                 redisTemplate.opsForValue().set(cacheKey, jsonData, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-                log.debug("已刷新用户{}的分类缓存", userId);
+                log.debug("已刷新用户{}的分类缓存（包含书签数量）", userId);
             } else {
                 // 如果分类为空，删除缓存
                 redisTemplate.delete(cacheKey);
@@ -117,6 +126,27 @@ public class CategoryCacheService {
 
         } catch (Exception e) {
             log.error("刷新用户分类缓存失败: userId={}", userId, e);
+        }
+    }
+
+    /**
+     * 为分类列表填充书签数量
+     * 
+     * @param categories 分类列表
+     * @param userId     用户ID
+     */
+    private void populateBookmarkCounts(List<Category> categories, Long userId) {
+        if (categories == null || categories.isEmpty()) {
+            return;
+        }
+        for (Category category : categories) {
+            Long count = bookmarkMapper.selectCount(
+                    new QueryWrapper<Bookmark>()
+                            .eq("category_id", category.getId())
+                            .eq("user_id", userId)
+                            .eq("status", 1) // 只统计正常状态的书签
+            );
+            category.setBookmarkCount(count.intValue());
         }
     }
 
@@ -167,6 +197,9 @@ public class CategoryCacheService {
                                     .eq("user_id", userId)
                                     .orderByAsc("sort_order")
                                     .orderByDesc("create_time"));
+
+                    // 为每个分类计算书签数量
+                    populateBookmarkCounts(categories, userId);
 
                     // 更新缓存
                     if (categories != null && !categories.isEmpty()) {

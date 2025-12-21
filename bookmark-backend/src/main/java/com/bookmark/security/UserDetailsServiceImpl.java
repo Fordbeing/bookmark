@@ -38,9 +38,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("User not found: " + identifier);
         }
 
+        // 检查用户是否被禁用 (status: 1=启用, 0=禁用)
+        boolean enabled = user.getStatus() == null || user.getStatus() == 1;
+
         return new org.springframework.security.core.userdetails.User(
                 String.valueOf(user.getId()), // 使用 ID 作为 username
                 user.getPassword() != null ? user.getPassword() : "",
+                enabled, // 账户是否启用
+                true, // 账户未过期
+                true, // 凭证未过期
+                true, // 账户未锁定
                 new ArrayList<>());
     }
 }

@@ -30,7 +30,7 @@ public class Bookmark {
 
     private Integer sortOrder;
 
-    @TableLogic
+    @TableLogic(value = "1", delval = "0")
     private Integer status; // 0-删除 1-正常
 
     @TableField(fill = FieldFill.INSERT)

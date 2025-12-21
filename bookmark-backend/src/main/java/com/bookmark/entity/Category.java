@@ -25,4 +25,8 @@ public class Category {
 
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
+    // 非持久化字段：该分类下的书签数量
+    @TableField(exist = false)
+    private Integer bookmarkCount;
 }

@@ -27,7 +27,14 @@
           <div class="stat-item blue">
             <div class="stat-header">
               <span class="stat-label">📚 书签</span>
-              <span class="stat-value">{{ stats.bookmarkCount }}/{{ limitsInfo?.bookmarkLimit || 50 }}</span>
+              <el-tooltip 
+                v-if="limitsInfo?.bookmarkExtra > 0"
+                :content="`基础额度: ${limitsInfo.bookmarkBase} + 激活码额度: ${limitsInfo.bookmarkExtra}`"
+                placement="top"
+              >
+                <span class="stat-value" style="cursor: help; text-decoration: underline dotted;">{{ stats.bookmarkCount }}/{{ limitsInfo?.bookmarkLimit || 50 }}</span>
+              </el-tooltip>
+              <span v-else class="stat-value">{{ stats.bookmarkCount }}/{{ limitsInfo?.bookmarkLimit || 50 }}</span>
             </div>
             <el-progress 
               :percentage="Math.min(stats.bookmarkCount / (limitsInfo?.bookmarkLimit || 50) * 100, 100)" 
@@ -39,7 +46,14 @@
           <div class="stat-item green">
             <div class="stat-header">
               <span class="stat-label">📁 分类</span>
-              <span class="stat-value">{{ stats.categoryCount }}/{{ limitsInfo?.categoryLimit || 7 }}</span>
+              <el-tooltip 
+                v-if="limitsInfo?.categoryExtra > 0"
+                :content="`基础额度: ${limitsInfo.categoryBase} + 激活码额度: ${limitsInfo.categoryExtra}`"
+                placement="top"
+              >
+                <span class="stat-value" style="cursor: help; text-decoration: underline dotted;">{{ stats.categoryCount }}/{{ limitsInfo?.categoryLimit || 7 }}</span>
+              </el-tooltip>
+              <span v-else class="stat-value">{{ stats.categoryCount }}/{{ limitsInfo?.categoryLimit || 7 }}</span>
             </div>
             <el-progress 
               :percentage="Math.min(stats.categoryCount / (limitsInfo?.categoryLimit || 7) * 100, 100)" 

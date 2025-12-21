@@ -32,6 +32,10 @@ public class UserSettings {
 
     private Integer showStats;
 
+    private Integer defaultBookmarkLimit; // 书签上限
+
+    private Integer defaultCategoryLimit; // 分类上限
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

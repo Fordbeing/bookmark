@@ -9,16 +9,20 @@ import com.bookmark.entity.User;
 import com.bookmark.mapper.BookmarkMapper;
 import com.bookmark.service.BookmarkService;
 import com.bookmark.service.ActivationCodeService;
+import com.bookmark.service.CategoryCacheService;
 import com.bookmark.service.SearchService;
 import com.bookmark.service.UrlMetadataService;
 import com.bookmark.service.UrlMetadataService.UrlMetadata;
 import com.bookmark.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 public class BookmarkServiceImpl implements BookmarkService {
 
@@ -37,257 +41,360 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Autowired
     private ActivationCodeService activationCodeService;
 
+    @Autowired
+    private CategoryCacheService categoryCacheService;
+
     @Override
     public Bookmark createBookmark(BookmarkRequest request) {
-        User currentUser = userService.getCurrentUser();
+        try {
+            User currentUser = userService.getCurrentUser();
 
-        // 检查书签数量限制（使用动态限制）
-        int bookmarkLimit = activationCodeService.getUserBookmarkLimit(currentUser.getId());
-        Long bookmarkCount = bookmarkMapper.selectCount(
-                new QueryWrapper<Bookmark>()
-                        .eq("user_id", currentUser.getId())
-                        .eq("status", 1));
-        if (bookmarkCount >= bookmarkLimit) {
-            throw new RuntimeException("书签数量已达上限（" + bookmarkLimit + "个），请删除部分书签或使用激活码增加额度");
-        }
+            // 检查书签数量限制（使用动态限制）
+            int bookmarkLimit = activationCodeService.getUserBookmarkLimit(currentUser.getId());
+            Long bookmarkCount = bookmarkMapper.selectCount(
+                    new QueryWrapper<Bookmark>()
+                            .eq("user_id", currentUser.getId())
+                            .eq("status", 1));
+            if (bookmarkCount >= bookmarkLimit) {
+                throw new RuntimeException("书签数量已达上限（" + bookmarkLimit + "个），请删除部分书签或使用激活码增加额度");
+            }
 
-        // 如果标题或描述为空，尝试从 URL 获取元数据
-        String title = request.getTitle();
-        String description = request.getDescription();
-        String iconUrl = null;
+            // 如果标题或描述为空，尝试从 URL 获取元数据
+            String title = request.getTitle();
+            String description = request.getDescription();
+            String iconUrl = null;
 
-        if ((title == null || title.isEmpty()) ||
-                (description == null || description.isEmpty())) {
-            try {
-                UrlMetadata metadata = urlMetadataService.fetchMetadata(request.getUrl());
-                if (title == null || title.isEmpty()) {
-                    title = metadata.getTitle();
+            if ((title == null || title.isEmpty()) ||
+                    (description == null || description.isEmpty())) {
+                try {
+                    UrlMetadata metadata = urlMetadataService.fetchMetadata(request.getUrl());
+                    if (title == null || title.isEmpty()) {
+                        title = metadata.getTitle();
+                    }
+                    if (description == null || description.isEmpty()) {
+                        description = metadata.getDescription();
+                    }
+                    iconUrl = metadata.getIconUrl();
+                } catch (Exception e) {
+                    log.warn("获取 URL 元数据失败: {}", e.getMessage());
                 }
-                if (description == null || description.isEmpty()) {
-                    description = metadata.getDescription();
+            }
+
+            // 如果仍然没有标题，使用 URL 的域名
+            if (title == null || title.isEmpty()) {
+                try {
+                    title = request.getUrl().replaceAll("https?://", "").split("/")[0];
+                } catch (Exception e) {
+                    title = request.getUrl();
                 }
-                iconUrl = metadata.getIconUrl();
-            } catch (Exception e) {
-                // 获取元数据失败，使用默认值
             }
-        }
 
-        // 如果仍然没有标题，使用 URL 的域名
-        if (title == null || title.isEmpty()) {
+            Bookmark bookmark = new Bookmark();
+            bookmark.setUserId(currentUser.getId());
+            bookmark.setTitle(title);
+            bookmark.setUrl(request.getUrl());
+            bookmark.setDescription(description);
+            bookmark.setCategoryId(request.getCategoryId());
+            bookmark.setIsFavorite(request.getIsFavorite() != null ? request.getIsFavorite() : 0);
+            bookmark.setVisitCount(0);
+            bookmark.setSortOrder(0);
+            bookmark.setStatus(1);
+
+            // Convert tags to JSON
+            if (request.getTags() != null && !request.getTags().isEmpty()) {
+                bookmark.setTags(JSONUtil.toJsonStr(request.getTags()));
+            }
+
+            // 设置图标
+            if (iconUrl != null && !iconUrl.isEmpty()) {
+                bookmark.setIconUrl(iconUrl);
+            } else {
+                try {
+                    String domain = request.getUrl().replaceAll("(https?://[^/]+).*", "$1");
+                    bookmark.setIconUrl(domain + "/favicon.ico");
+                } catch (Exception e) {
+                    bookmark.setIconUrl(null);
+                }
+            }
+
+            bookmarkMapper.insert(bookmark);
+
+            // 同步到 Elasticsearch
             try {
-                title = request.getUrl().replaceAll("https?://", "").split("/")[0];
+                searchService.syncBookmark(bookmark);
             } catch (Exception e) {
-                title = request.getUrl();
+                log.error("同步书签到 Elasticsearch 失败: {}", e.getMessage(), e);
             }
-        }
 
-        Bookmark bookmark = new Bookmark();
-        bookmark.setUserId(currentUser.getId());
-        bookmark.setTitle(title);
-        bookmark.setUrl(request.getUrl());
-        bookmark.setDescription(description);
-        bookmark.setCategoryId(request.getCategoryId());
-        bookmark.setIsFavorite(request.getIsFavorite() != null ? request.getIsFavorite() : 0);
-        bookmark.setVisitCount(0);
-        bookmark.setSortOrder(0);
-        bookmark.setStatus(1);
-
-        // Convert tags to JSON
-        if (request.getTags() != null && !request.getTags().isEmpty()) {
-            bookmark.setTags(JSONUtil.toJsonStr(request.getTags()));
-        }
-
-        // 设置图标
-        if (iconUrl != null && !iconUrl.isEmpty()) {
-            bookmark.setIconUrl(iconUrl);
-        } else {
+            // 刷新分类缓存（更新书签数量）
             try {
-                String domain = request.getUrl().replaceAll("(https?://[^/]+).*", "$1");
-                bookmark.setIconUrl(domain + "/favicon.ico");
+                categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
             } catch (Exception e) {
-                bookmark.setIconUrl(null);
+                log.error("刷新分类缓存失败: {}", e.getMessage(), e);
             }
+
+            return bookmark;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("创建书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("创建书签失败");
         }
-
-        bookmarkMapper.insert(bookmark);
-
-        // 同步到 Elasticsearch
-        searchService.syncBookmark(bookmark);
-
-        return bookmark;
     }
 
     @Override
     public Bookmark updateBookmark(Long id, BookmarkRequest request) {
-        User currentUser = userService.getCurrentUser();
-        Bookmark bookmark = bookmarkMapper.selectById(id);
+        try {
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectById(id);
 
-        if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("书签不存在或无权限");
+            if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
+                throw new RuntimeException("书签不存在或无权限");
+            }
+
+            if (request.getTitle() != null)
+                bookmark.setTitle(request.getTitle());
+            if (request.getDescription() != null)
+                bookmark.setDescription(request.getDescription());
+            if (request.getCategoryId() != null)
+                bookmark.setCategoryId(request.getCategoryId());
+            if (request.getTags() != null)
+                bookmark.setTags(JSONUtil.toJsonStr(request.getTags()));
+            if (request.getIsFavorite() != null)
+                bookmark.setIsFavorite(request.getIsFavorite());
+
+            bookmarkMapper.updateById(bookmark);
+
+            // 同步到 Elasticsearch
+            try {
+                searchService.syncBookmark(bookmark);
+            } catch (Exception e) {
+                log.error("同步书签到 Elasticsearch 失败: {}", e.getMessage(), e);
+            }
+
+            return bookmark;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("更新书签失败");
         }
-
-        if (request.getTitle() != null)
-            bookmark.setTitle(request.getTitle());
-        if (request.getDescription() != null)
-            bookmark.setDescription(request.getDescription());
-        if (request.getCategoryId() != null)
-            bookmark.setCategoryId(request.getCategoryId());
-        if (request.getTags() != null)
-            bookmark.setTags(JSONUtil.toJsonStr(request.getTags()));
-        if (request.getIsFavorite() != null)
-            bookmark.setIsFavorite(request.getIsFavorite());
-
-        bookmarkMapper.updateById(bookmark);
-        // 同步到 Elasticsearch
-        searchService.syncBookmark(bookmark);
-
-        return bookmark;
     }
 
     @Override
     public void deleteBookmark(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Bookmark bookmark = bookmarkMapper.selectById(id);
-
-        if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("书签不存在或无权限");
-        }
-
-        // 使用 CompletableFuture.runAsync 异步执行删除操作
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-            // 先从 Elasticsearch 删除
-            searchService.deleteBookmark(id);
-            // 再从数据库删除
-            bookmarkMapper.deleteById(id);
-        });
-
-        // 等待异步操作完成，如果有异常则抛出
         try {
-            future.join(); // join() 会等待完成并抛出未检查异常
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectById(id);
+
+            if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
+                throw new RuntimeException("书签不存在或无权限");
+            }
+
+            // 使用 CompletableFuture.runAsync 异步执行删除操作
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    // 先从 Elasticsearch 删除
+                    searchService.deleteBookmark(id);
+                } catch (Exception e) {
+                    log.error("从 Elasticsearch 删除书签失败: {}", e.getMessage(), e);
+                }
+                // 再从数据库删除
+                bookmarkMapper.deleteById(id);
+            });
+
+            // 等待异步操作完成
+            future.join();
+
+            // 刷新分类缓存（更新书签数量）
+            try {
+                categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+            } catch (Exception e) {
+                log.error("刷新分类缓存失败: {}", e.getMessage(), e);
+            }
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("删除书签失败: " + e.getMessage(), e);
+            log.error("删除书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("删除书签失败: " + e.getMessage());
         }
     }
 
     @Override
     public void deleteBatch(List<Long> ids) {
-        User currentUser = userService.getCurrentUser();
-        bookmarkMapper.delete(new QueryWrapper<Bookmark>()
-                .eq("user_id", currentUser.getId())
-                .in("id", ids));
+        try {
+            User currentUser = userService.getCurrentUser();
+            bookmarkMapper.delete(new QueryWrapper<Bookmark>()
+                    .eq("user_id", currentUser.getId())
+                    .in("id", ids));
+
+            // 刷新分类缓存（更新书签数量）
+            try {
+                categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+            } catch (Exception e) {
+                log.error("刷新分类缓存失败: {}", e.getMessage(), e);
+            }
+        } catch (Exception e) {
+            log.error("批量删除书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("批量删除书签失败");
+        }
     }
 
     @Override
     public Bookmark getBookmarkById(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Bookmark bookmark = bookmarkMapper.selectById(id);
+        try {
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectById(id);
 
-        if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("书签不存在或无权限");
+            if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
+                throw new RuntimeException("书签不存在或无权限");
+            }
+
+            return bookmark;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("获取书签详情失败: {}", e.getMessage(), e);
+            throw new RuntimeException("获取书签详情失败");
         }
-
-        return bookmark;
     }
 
     @Override
     public Page<Bookmark> getBookmarkList(Integer page, Integer size, Long categoryId,
             String keyword, String sortBy, String sortOrder) {
-        User currentUser = userService.getCurrentUser();
+        try {
+            User currentUser = userService.getCurrentUser();
 
-        Page<Bookmark> pageParam = new Page<>(page, size);
-        QueryWrapper<Bookmark> wrapper = new QueryWrapper<>();
-        wrapper.eq("user_id", currentUser.getId());
+            Page<Bookmark> pageParam = new Page<>(page, size);
+            QueryWrapper<Bookmark> wrapper = new QueryWrapper<>();
 
-        if (categoryId != null) {
-            wrapper.eq("category_id", categoryId);
-        }
+            // 1. 基础过滤条件：属于当前用户
+            wrapper.eq("user_id", currentUser.getId());
 
-        if (keyword != null && !keyword.isEmpty()) {
-            wrapper.and(w -> w.like("title", keyword).or().like("description", keyword).or().like("url", keyword));
-        }
+            // 2. 新增条件：只查找 status 为 1 的数据
+            wrapper.eq("status", 1);
 
-        // Sorting
-        if (sortBy != null && !sortBy.isEmpty()) {
-            if ("desc".equalsIgnoreCase(sortOrder)) {
-                wrapper.orderByDesc(sortBy);
-            } else {
-                wrapper.orderByAsc(sortBy);
+            // 3. 筛选：分类
+            if (categoryId != null) {
+                wrapper.eq("category_id", categoryId);
             }
-        } else {
-            wrapper.orderByDesc("create_time");
-        }
 
-        return bookmarkMapper.selectPage(pageParam, wrapper);
+            // 4. 筛选：关键字模糊查询
+            if (keyword != null && !keyword.isEmpty()) {
+                wrapper.and(w -> w.like("title", keyword).or().like("description", keyword).or().like("url", keyword));
+            }
+
+            // 5. 排序逻辑
+            if (sortBy != null && !sortBy.isEmpty()) {
+                if ("desc".equalsIgnoreCase(sortOrder)) {
+                    wrapper.orderByDesc(sortBy);
+                } else {
+                    wrapper.orderByAsc(sortBy);
+                }
+            } else {
+                wrapper.orderByDesc("create_time");
+            }
+
+            return bookmarkMapper.selectPage(pageParam, wrapper);
+        } catch (Exception e) {
+            log.error("获取书签列表失败: {}", e.getMessage(), e);
+            throw new RuntimeException("获取书签列表失败");
+        }
     }
 
     @Override
     public void updateFavorite(Long id, Integer isFavorite) {
-        User currentUser = userService.getCurrentUser();
-        Bookmark bookmark = bookmarkMapper.selectById(id);
+        try {
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectById(id);
 
-        if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("书签不存在或无权限");
+            if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
+                throw new RuntimeException("书签不存在或无权限");
+            }
+
+            bookmark.setIsFavorite(isFavorite);
+            bookmarkMapper.updateById(bookmark);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新收藏状态失败: {}", e.getMessage(), e);
+            throw new RuntimeException("更新收藏状态失败");
         }
-
-        bookmark.setIsFavorite(isFavorite);
-        bookmarkMapper.updateById(bookmark);
     }
 
     @Override
     public void increaseVisitCount(Long id) {
-        User currentUser = userService.getCurrentUser();
-        Bookmark bookmark = bookmarkMapper.selectById(id);
+        try {
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectById(id);
 
-        if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
-            throw new RuntimeException("书签不存在或无权限");
+            if (bookmark == null || !bookmark.getUserId().equals(currentUser.getId())) {
+                throw new RuntimeException("书签不存在或无权限");
+            }
+
+            bookmark.setVisitCount(bookmark.getVisitCount() + 1);
+            bookmarkMapper.updateById(bookmark);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("增加访问次数失败: {}", e.getMessage(), e);
         }
-
-        bookmark.setVisitCount(bookmark.getVisitCount() + 1);
-        bookmarkMapper.updateById(bookmark);
     }
 
     // ========== 回收站相关方法 ==========
 
     @Override
     public List<Bookmark> getTrashBookmarks() {
-        User currentUser = userService.getCurrentUser();
-        // 直接查询 status=0 的书签（逻辑删除的）
-        return bookmarkMapper.selectList(
-                new QueryWrapper<Bookmark>()
-                        .eq("user_id", currentUser.getId())
-                        .eq("status", 0)
-                        .orderByDesc("update_time"));
+        try {
+            User currentUser = userService.getCurrentUser();
+            // 使用原生 SQL 查询，绕过 @TableLogic
+            return bookmarkMapper.selectTrashByUserId(currentUser.getId());
+        } catch (Exception e) {
+            log.error("获取回收站书签失败: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 
     @Override
     public void restoreBookmark(Long id) {
-        User currentUser = userService.getCurrentUser();
-        // 使用原生 SQL 更新，因为 MyBatis-Plus 逻辑删除会过滤掉 status=0 的记录
-        bookmarkMapper.update(null,
-                new com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper<Bookmark>()
-                        .eq("id", id)
-                        .eq("user_id", currentUser.getId())
-                        .set("status", 1));
+        try {
+            User currentUser = userService.getCurrentUser();
+            // 使用原生 SQL 恢复，绕过 @TableLogic
+            bookmarkMapper.restoreById(id, currentUser.getId());
+
+            // 刷新分类缓存（更新书签数量）
+            try {
+                categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
+            } catch (Exception e) {
+                log.error("刷新分类缓存失败: {}", e.getMessage(), e);
+            }
+        } catch (Exception e) {
+            log.error("恢复书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("恢复书签失败");
+        }
     }
 
     @Override
     public void permanentDeleteBookmark(Long id) {
-        User currentUser = userService.getCurrentUser();
-        // 真正删除记录
-        bookmarkMapper.delete(
-                new QueryWrapper<Bookmark>()
-                        .eq("id", id)
-                        .eq("user_id", currentUser.getId())
-                        .eq("status", 0));
+        try {
+            User currentUser = userService.getCurrentUser();
+            // 使用原生 SQL 永久删除，绕过 @TableLogic
+            bookmarkMapper.permanentDeleteById(id, currentUser.getId());
+        } catch (Exception e) {
+            log.error("永久删除书签失败: {}", e.getMessage(), e);
+            throw new RuntimeException("永久删除书签失败");
+        }
     }
 
     @Override
     public void clearTrash() {
-        User currentUser = userService.getCurrentUser();
-        // 删除所有逻辑删除的书签
-        bookmarkMapper.delete(
-                new QueryWrapper<Bookmark>()
-                        .eq("user_id", currentUser.getId())
-                        .eq("status", 0));
+        try {
+            User currentUser = userService.getCurrentUser();
+            // 使用原生 SQL 清空回收站，绕过 @TableLogic
+            bookmarkMapper.clearTrashByUserId(currentUser.getId());
+        } catch (Exception e) {
+            log.error("清空回收站失败: {}", e.getMessage(), e);
+            throw new RuntimeException("清空回收站失败");
+        }
     }
 }

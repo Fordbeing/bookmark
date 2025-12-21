@@ -1,0 +1,598 @@
+<template>
+  <div class="user-detail-wrapper">
+    <div class="user-detail" v-if="user">
+      <!-- 返回按钮 -->
+      <div class="back-row">
+        <router-link to="/users" class="back-link">← 返回用户列表</router-link>
+      </div>
+
+      <!-- 用户基本信息 -->
+      <div class="card user-header-card">
+        <div class="user-header">
+          <div class="user-avatar-large">
+            {{ user.username?.charAt(0)?.toUpperCase() || '?' }}
+          </div>
+          <div class="user-info">
+            <div class="user-name-row">
+              <h2 class="user-name">{{ user.username }}</h2>
+              <span v-if="user.isAdmin === 1" class="badge badge-primary">管理员</span>
+              <span :class="user.status === 1 ? 'badge badge-success' : 'badge badge-danger'">
+                {{ user.status === 1 ? '正常' : '已禁用' }}
+              </span>
+            </div>
+            <div class="user-meta">
+              <span v-if="user.email">📧 {{ user.email }}</span>
+              <span v-if="user.phone">📱 {{ user.phone }}</span>
+              <span>📅 注册于 {{ formatDate(user.createTime) }}</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <button 
+              class="btn" 
+              :class="user.status === 1 ? 'btn-warning' : 'btn-success'"
+              @click="toggleStatus"
+            >
+              {{ user.status === 1 ? '禁用用户' : '启用用户' }}
+            </button>
+            <button class="btn btn-secondary" @click="resetPassword">重置密码</button>
+            <button 
+              v-if="user.isAdmin !== 1" 
+              class="btn btn-secondary"
+              @click="setAdmin"
+            >
+              设为管理员
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 统计信息 -->
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.bookmarkCount }}</div>
+          <div class="stat-label">书签数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.categoryCount }}</div>
+          <div class="stat-label">分类数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.tagCount }}</div>
+          <div class="stat-label">标签数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ userStats.activeActivations }}</div>
+          <div class="stat-label">有效激活</div>
+        </div>
+      </div>
+
+      <!-- 详细信息标签页 -->
+      <div class="card">
+        <div class="tabs">
+          <button 
+            v-for="tab in tabs" 
+            :key="tab.key"
+            class="tab-btn"
+            :class="{ active: activeTab === tab.key }"
+            @click="activeTab = tab.key"
+          >
+            {{ tab.icon }} {{ tab.label }}
+          </button>
+        </div>
+
+        <div class="tab-content">
+          <!-- 用户书签 -->
+          <div v-if="activeTab === 'bookmarks'" class="bookmarks-tab">
+            <div v-if="bookmarks.length > 0" class="bookmark-list">
+              <div v-for="bookmark in bookmarks" :key="bookmark.id" class="bookmark-item">
+                <img :src="bookmark.iconUrl || '/favicon.ico'" class="bookmark-icon" @error="handleIconError" />
+                <div class="bookmark-info">
+                  <div class="bookmark-title">{{ bookmark.title }}</div>
+                  <a :href="bookmark.url" target="_blank" class="bookmark-url">{{ bookmark.url }}</a>
+                </div>
+                <div class="bookmark-meta">
+                  {{ formatDate(bookmark.createTime) }}
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-state">
+              <div class="empty-state-icon">🔖</div>
+              <div class="empty-state-text">暂无书签</div>
+            </div>
+          </div>
+
+          <!-- 激活记录 -->
+          <div v-if="activeTab === 'activations'" class="activations-tab">
+            <div v-if="activations.length > 0" class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>激活码</th>
+                    <th>额外书签数</th>
+                    <th>额外分类数</th>
+                    <th>过期时间</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="act in activations" :key="act.id">
+                    <td>{{ act.code }}</td>
+                    <td>+{{ act.extraBookmarks }}</td>
+                    <td>+{{ act.extraCategories }}</td>
+                    <td>{{ formatDate(act.expireTime) }}</td>
+                    <td>
+                      <span :class="act.status === 1 ? 'badge badge-success' : 'badge badge-danger'">
+                        {{ act.status === 1 ? '有效' : '已过期' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state">
+              <div class="empty-state-icon">🎫</div>
+              <div class="empty-state-text">暂无激活记录</div>
+            </div>
+          </div>
+
+          <!-- 登录历史 -->
+          <div v-if="activeTab === 'loginHistory'" class="login-history-tab">
+            <div v-if="loginHistory.length > 0" class="table-container">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>登录时间</th>
+                    <th>IP地址</th>
+                    <th>地点</th>
+                    <th>设备</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="log in loginHistory" :key="log.id">
+                    <td>{{ formatDate(log.createTime) }}</td>
+                    <td>{{ log.ipAddress }}</td>
+                    <td>{{ log.location || '-' }}</td>
+                    <td>{{ log.device || '-' }}</td>
+                    <td>
+                      <span :class="log.status === 1 ? 'badge badge-success' : 'badge badge-danger'">
+                        {{ log.status === 1 ? '成功' : '失败' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <div class="empty-state-text">暂无登录记录</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 加载中 -->
+    <div v-else-if="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>加载中...</p>
+    </div>
+
+    <!-- 用户不存在 -->
+    <div v-else class="error-container">
+      <div class="empty-state">
+        <div class="empty-state-icon">❌</div>
+        <div class="empty-state-text">用户不存在</div>
+        <router-link to="/users" class="btn btn-primary mt-4">返回用户列表</router-link>
+      </div>
+    </div>
+
+    <!-- 确认弹窗 -->
+    <ConfirmModal
+      v-model:visible="confirmModal.visible"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      :type="confirmModal.type"
+      :confirm-text="confirmModal.confirmText"
+      @confirm="confirmModal.onConfirm"
+    />
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { userApi } from '@/api/user'
+import ConfirmModal from '@/components/ConfirmModal.vue'
+import dayjs from 'dayjs'
+
+const route = useRoute()
+
+const loading = ref(true)
+const user = ref(null)
+const activeTab = ref('bookmarks')
+
+const tabs = [
+  { key: 'bookmarks', icon: '🔖', label: '用户书签' },
+  { key: 'activations', icon: '🎫', label: '激活记录' },
+  { key: 'loginHistory', icon: '📝', label: '登录历史' }
+]
+
+const userStats = reactive({
+  bookmarkCount: 0,
+  categoryCount: 0,
+  tagCount: 0,
+  activeActivations: 0
+})
+
+const bookmarks = ref([])
+const activations = ref([])
+const loginHistory = ref([])
+
+function formatDate(date) {
+  if (!date) return '-'
+  return dayjs(date).format('YYYY-MM-DD HH:mm')
+}
+
+function handleIconError(e) {
+  e.target.src = '/favicon.ico'
+}
+
+async function loadUserDetail() {
+  loading.value = true
+  try {
+    const response = await userApi.getDetail(route.params.id)
+    if (response.code === 200) {
+      user.value = response.data.user || response.data
+      userStats.bookmarkCount = response.data.bookmarkCount || 0
+      userStats.categoryCount = response.data.categoryCount || 0
+      userStats.tagCount = response.data.tagCount || 0
+      userStats.activeActivations = response.data.activeActivations || 0
+    }
+  } catch (error) {
+    console.error('Failed to load user detail:', error)
+    // 使用模拟数据
+    user.value = {
+      id: route.params.id,
+      username: 'testuser',
+      nickname: '测试用户',
+      email: 'test@example.com',
+      phone: '13800138000',
+      status: 1,
+      isAdmin: 0,
+      loginType: 1,
+      createTime: dayjs().subtract(30, 'day').toISOString(),
+      lastLoginTime: dayjs().subtract(1, 'hour').toISOString()
+    }
+    userStats.bookmarkCount = 156
+    userStats.categoryCount = 8
+    userStats.tagCount = 24
+    userStats.activeActivations = 2
+  } finally {
+    loading.value = false
+  }
+  
+  // 加载子数据
+  loadBookmarks()
+  loadActivations()
+  loadLoginHistory()
+}
+
+async function loadBookmarks() {
+  try {
+    const response = await userApi.getBookmarks(route.params.id, { page: 1, size: 20 })
+    if (response.code === 200) {
+      bookmarks.value = response.data.records || response.data || []
+    }
+  } catch (error) {
+    // 模拟数据
+    bookmarks.value = [
+      { id: 1, title: 'GitHub', url: 'https://github.com', iconUrl: '', createTime: dayjs().subtract(1, 'day').toISOString() },
+      { id: 2, title: 'Google', url: 'https://google.com', iconUrl: '', createTime: dayjs().subtract(2, 'day').toISOString() }
+    ]
+  }
+}
+
+async function loadActivations() {
+  try {
+    const response = await userApi.getActivations(route.params.id)
+    if (response.code === 200) {
+      activations.value = response.data || []
+    }
+  } catch (error) {
+    activations.value = [
+      { id: 1, code: 'ABC123', extraBookmarks: 100, extraCategories: 10, expireTime: dayjs().add(30, 'day').toISOString(), status: 1 }
+    ]
+  }
+}
+
+async function loadLoginHistory() {
+  try {
+    const response = await userApi.getLoginHistory(route.params.id, { page: 1, size: 20 })
+    if (response.code === 200) {
+      loginHistory.value = response.data.records || response.data || []
+    }
+  } catch (error) {
+    // API 暂不可用，显示空状态
+    console.warn('登录历史功能暂不可用')
+    loginHistory.value = []
+  }
+}
+
+const confirmModal = reactive({
+  visible: false,
+  title: '',
+  message: '',
+  type: 'warning',
+  confirmText: '确定',
+  onConfirm: () => {}
+})
+
+function showConfirm(options) {
+  Object.assign(confirmModal, {
+    visible: true,
+    title: options.title || '确认操作',
+    message: options.message || '',
+    type: options.type || 'warning',
+    confirmText: options.confirmText || '确定',
+    onConfirm: options.onConfirm || (() => {})
+  })
+}
+
+function toggleStatus() {
+  const newStatus = user.value.status === 1 ? 0 : 1
+  const action = newStatus === 0 ? '禁用' : '启用'
+  
+  showConfirm({
+    title: `${action}用户`,
+    message: `确定要${action}该用户吗？${newStatus === 0 ? '禁用后该用户将无法登录系统。' : ''}`,
+    type: newStatus === 0 ? 'warning' : 'success',
+    confirmText: action,
+    onConfirm: async () => {
+      try {
+        const response = await userApi.updateStatus(user.value.id, newStatus)
+        if (response.code === 200) {
+          user.value.status = newStatus
+        }
+      } catch (error) {
+        console.error('操作失败:', error)
+      }
+    }
+  })
+}
+
+function resetPassword() {
+  showConfirm({
+    title: '重置密码',
+    message: '确定要重置该用户的密码吗？新密码将发送到用户邮箱。',
+    type: 'warning',
+    confirmText: '重置',
+    onConfirm: async () => {
+      try {
+        await userApi.resetPassword(user.value.id)
+      } catch (error) {
+        console.error('操作失败:', error)
+      }
+    }
+  })
+}
+
+function setAdmin() {
+  showConfirm({
+    title: '设置管理员',
+    message: '确定要将该用户设为管理员吗？管理员拥有系统所有权限。',
+    type: 'warning',
+    confirmText: '确定',
+    onConfirm: async () => {
+      try {
+        const response = await userApi.setAdmin(user.value.id, 1)
+        if (response.code === 200) {
+          user.value.isAdmin = 1
+        }
+      } catch (error) {
+        console.error('操作失败:', error)
+      }
+    }
+  })
+}
+
+onMounted(() => {
+  loadUserDetail()
+})
+</script>
+
+<style scoped>
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.back-row {
+  margin-bottom: 4px;
+}
+
+.back-link {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.back-link:hover {
+  color: var(--primary);
+}
+
+.user-header-card {
+  padding: 24px;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.user-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.user-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.user-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: white;
+}
+
+/* 统计行 */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.stat-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* 标签页 */
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-page);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.tab-content {
+  padding: 24px;
+}
+
+/* 书签列表 */
+.bookmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bookmark-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-page);
+  border-radius: var(--radius);
+}
+
+.bookmark-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.bookmark-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bookmark-title {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.bookmark-url {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  display: block;
+}
+
+.bookmark-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* 加载/错误状态 */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+</style>

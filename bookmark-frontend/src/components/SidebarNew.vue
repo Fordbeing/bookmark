@@ -287,6 +287,11 @@ const props = defineProps({
   showStats: {
     type: Boolean,
     default: true
+  },
+  // 全部书签总数（用于统计显示，不受过滤影响）
+  allBookmarksCount: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -302,8 +307,8 @@ const categoryExpanded = ref(true);
 const quickActionsExpanded = ref(true);
 const otherExpanded = ref(false);
 
-// 计算总书签数
-const totalBookmarks = computed(() => props.bookmarks.length);
+// 计算总书签数（使用传入的全部总数，不受过滤影响）
+const totalBookmarks = computed(() => props.allBookmarksCount || props.bookmarks.length);
 
 // 计算分类数量
 const categoryCount = computed(() => categories.value.length);
@@ -364,14 +369,11 @@ const loadCategories = async () => {
   try {
     const result = await getCategoryListAPI();
     if (result.data) {
-      categories.value = result.data.map(cat => {
-        // 计算每个分类的书签数量
-        const count = props.bookmarks.filter(b => b.categoryId === cat.id).length;
-        return {
-          ...cat,
-          count
-        };
-      });
+      // 服务器返回的分类已经包含 bookmarkCount 字段
+      categories.value = result.data.map(cat => ({
+        ...cat,
+        count: cat.bookmarkCount || 0
+      }));
     }
   } catch (error) {
     console.error('加载分类失败:', error);
@@ -418,15 +420,8 @@ onMounted(async () => {
   }
 });
 
-// 监听书签变化，重新计算分类数量
-watch(() => props.bookmarks, () => {
-  if (categories.value.length > 0) {
-    categories.value = categories.value.map(cat => ({
-      ...cat,
-      count: props.bookmarks.filter(b => b.categoryId === cat.id).length
-    }));
-  }
-}, { deep: true });
+// 监听书签变化时不再重新计算分类数量（由服务器返回）
+// 但仍然保留 watch 以便将来扩展
 
 // 监听颜色变化（来自 App.vue）
 watch(() => customColorFrom.value, (newVal) => {
