@@ -18,6 +18,10 @@
       @filter-favorites="handleFavoriteFilter"
       @filter-trash="handleTrashFilter"
       @add-category="isCategoryModalVisible = true"
+      @open-advanced-search="isAdvancedSearchVisible = true"
+      @open-analytics="isAnalyticsVisible = true"
+      @open-dead-links="isDeadLinksVisible = true"
+      @share-category="openShareModal"
       :bookmarks="bookmarks"
       :showStats="showStats"
       :allBookmarksCount="allBookmarksCount"
@@ -176,6 +180,7 @@
                   <h3 class="font-bold text-gray-800 line-clamp-1 hover:text-blue-600 transition-colors">{{ item.title || item.url }}</h3>
                   <p class="text-xs text-gray-400 truncate">{{ item.url }}</p>
                 </div>
+                <span v-if="item.isPinned === 1" class="text-lg" title="已置顶">📌</span>
                 <span v-if="item.isFavorite === 1" class="text-lg">⭐</span>
               </div>
               <!-- 描述 -->
@@ -191,6 +196,15 @@
                   <span v-if="item.visitCount" class="flex items-center gap-1">👁 {{ item.visitCount }}</span>
                 </div>
                 <div class="flex gap-1">
+                  <el-button 
+                    :type="item.isPinned === 1 ? 'warning' : 'default'" 
+                    size="small" 
+                    plain 
+                    @click.stop="togglePinBookmark(item)"
+                    :title="item.isPinned === 1 ? '取消置顶' : '置顶'"
+                  >
+                    {{ item.isPinned === 1 ? '📌' : '📍' }}
+                  </el-button>
                   <el-button type="primary" size="small" plain @click.stop="copyUrl(item.url)">复制</el-button>
                   <el-button size="small" @click.stop="editBookmark(item)">编辑</el-button>
                   <el-button type="danger" size="small" plain @click.stop="deleteBookmark(item.id)">删除</el-button>
@@ -353,6 +367,30 @@
         v-model="isCategoryModalVisible"
         @success="handleCategoryAdded"
       />
+
+      <!-- 高级搜索抽屉 -->
+      <AdvancedSearchDrawer 
+        v-model="isAdvancedSearchVisible"
+        @select="handleBookmarkSelect"
+      />
+
+      <!-- 数据统计抽屉 -->
+      <AnalyticsDrawer 
+        v-model="isAnalyticsVisible"
+      />
+
+      <!-- 失效链接管理 -->
+      <DeadLinksDrawer 
+        v-model="isDeadLinksVisible"
+        @refresh="fetchList"
+      />
+
+      <!-- 分享弹窗 -->
+      <ShareModal 
+        v-model="isShareModalVisible"
+        :categoryId="sharingCategoryId"
+        :categoryName="sharingCategoryName"
+      />
     </div>
   </div>
 </template>
@@ -369,7 +407,9 @@ import {
   restoreBookmarkAPI,
   permanentDeleteBookmarkAPI,
   clearTrashAPI,
-  recordBookmarkVisitAPI
+  recordBookmarkVisitAPI,
+  pinBookmarkAPI,
+  unpinBookmarkAPI
 } from './api/bookmark';
 import { getCategoryListAPI } from './api/category';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -384,6 +424,10 @@ import ProfilePage from "./components/ProfilePage.vue";
 import AddCategoryModal from "./components/AddCategoryModal.vue";
 import ExtensionPage from "./components/ExtensionPage.vue";
 import DataManagementPage from "./components/DataManagementPage.vue";
+import AdvancedSearchDrawer from "./components/AdvancedSearchDrawer.vue";
+import AnalyticsDrawer from "./components/AnalyticsDrawer.vue";
+import DeadLinksDrawer from "./components/DeadLinksDrawer.vue";
+import ShareModal from "./components/ShareModal.vue";
 
 const currentPage = ref('main'); // 'main' 或 'auth'
 const sidebarRef = ref(null);
@@ -399,6 +443,12 @@ const isProfileVisible = ref(false);
 const isCategoryModalVisible = ref(false);
 const isExtensionVisible = ref(false);
 const isDataManagementVisible = ref(false);
+const isAdvancedSearchVisible = ref(false);
+const isAnalyticsVisible = ref(false);
+const isDeadLinksVisible = ref(false);
+const isShareModalVisible = ref(false);
+const sharingCategoryId = ref(null);
+const sharingCategoryName = ref('');
 const editingBookmark = ref(null);
 
 // 显示设置
@@ -579,11 +629,43 @@ const handleClearTrash = async () => {
   }
 };
 
+// 置顶/取消置顶书签
+const togglePinBookmark = async (item) => {
+  try {
+    if (item.isPinned === 1) {
+      await unpinBookmarkAPI(item.id);
+      item.isPinned = 0;
+      ElMessage.success('已取消置顶');
+    } else {
+      await pinBookmarkAPI(item.id);
+      item.isPinned = 1;
+      ElMessage.success('已置顶');
+    }
+    // 重新加载列表以更新排序
+    await fetchList();
+  } catch (error) {
+    console.error('置顶操作失败:', error);
+    ElMessage.error('操作失败');
+  }
+};
+
 // 分类添加成功后刷新分类列表
 const handleCategoryAdded = () => {
   if (sidebarRef.value) {
     sidebarRef.value.loadCategories();
   }
+};
+
+// 从搜索结果选中书签
+const handleBookmarkSelect = (bookmark) => {
+  console.log('选中书签:', bookmark);
+};
+
+// 打开分享弹窗
+const openShareModal = (categoryId, categoryName) => {
+  sharingCategoryId.value = categoryId;
+  sharingCategoryName.value = categoryName;
+  isShareModalVisible.value = true;
 };
 
 // 数据变更后刷新列表

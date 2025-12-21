@@ -261,7 +261,7 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     public Page<Bookmark> getBookmarkList(Integer page, Integer size, Long categoryId,
-            String keyword, String sortBy, String sortOrder) {
+            String keyword, String sortBy, String sortOrder, Integer isFavorite) {
         try {
             User currentUser = userService.getCurrentUser();
 
@@ -279,12 +279,18 @@ public class BookmarkServiceImpl implements BookmarkService {
                 wrapper.eq("category_id", categoryId);
             }
 
-            // 4. 筛选：关键字模糊查询
+            // 4. 筛选：收藏夹
+            if (isFavorite != null && isFavorite == 1) {
+                wrapper.eq("is_favorite", 1);
+            }
+
+            // 5. 筛选：关键字模糊查询
             if (keyword != null && !keyword.isEmpty()) {
                 wrapper.and(w -> w.like("title", keyword).or().like("description", keyword).or().like("url", keyword));
             }
 
-            // 5. 排序逻辑
+            // 6. 排序逻辑：置顶书签优先
+            wrapper.orderByDesc("is_pinned"); // 置顶书签优先显示
             if (sortBy != null && !sortBy.isEmpty()) {
                 if ("desc".equalsIgnoreCase(sortOrder)) {
                     wrapper.orderByDesc(sortBy);
@@ -362,6 +368,17 @@ public class BookmarkServiceImpl implements BookmarkService {
             // 使用原生 SQL 恢复，绕过 @TableLogic
             bookmarkMapper.restoreById(id, currentUser.getId());
 
+            // 同步到ES索引（恢复后需要重建索引）
+            try {
+                Bookmark restored = bookmarkMapper.selectById(id);
+                if (restored != null) {
+                    searchService.syncBookmark(restored);
+                    log.info("已同步恢复的书签到ES索引: bookmarkId={}", id);
+                }
+            } catch (Exception e) {
+                log.error("同步ES索引失败: {}", e.getMessage(), e);
+            }
+
             // 刷新分类缓存（更新书签数量）
             try {
                 categoryCacheService.refreshUserCategoriesCache(currentUser.getId());
@@ -395,6 +412,114 @@ public class BookmarkServiceImpl implements BookmarkService {
         } catch (Exception e) {
             log.error("清空回收站失败: {}", e.getMessage(), e);
             throw new RuntimeException("清空回收站失败");
+        }
+    }
+
+    // ========== 置顶书签相关方法 ==========
+
+    @Override
+    public void updatePinStatus(Long id, Integer isPinned) {
+        try {
+            User currentUser = userService.getCurrentUser();
+            Bookmark bookmark = bookmarkMapper.selectOne(
+                    new QueryWrapper<Bookmark>()
+                            .eq("id", id)
+                            .eq("user_id", currentUser.getId()));
+            if (bookmark == null) {
+                throw new RuntimeException("书签不存在");
+            }
+            bookmark.setIsPinned(isPinned);
+            bookmarkMapper.updateById(bookmark);
+        } catch (Exception e) {
+            log.error("更新置顶状态失败: {}", e.getMessage(), e);
+            throw new RuntimeException("更新置顶状态失败");
+        }
+    }
+
+    @Override
+    public List<Bookmark> getPinnedBookmarks() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            return bookmarkMapper.selectList(
+                    new QueryWrapper<Bookmark>()
+                            .eq("user_id", currentUser.getId())
+                            .eq("is_pinned", 1)
+                            .eq("status", 1)
+                            .orderByDesc("update_time"));
+        } catch (Exception e) {
+            log.error("获取置顶书签失败: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    // ========== 高级搜索相关方法 ==========
+
+    @Override
+    public Page<Bookmark> advancedSearch(String keyword, String domain, Long categoryId,
+            String startDate, String endDate, Integer linkStatus, Integer page, Integer size) {
+        try {
+            User currentUser = userService.getCurrentUser();
+            Page<Bookmark> pageParam = new Page<>(page, size);
+            QueryWrapper<Bookmark> wrapper = new QueryWrapper<>();
+
+            // 基础条件
+            wrapper.eq("user_id", currentUser.getId());
+            wrapper.eq("status", 1);
+
+            // 关键字搜索
+            if (keyword != null && !keyword.isEmpty()) {
+                wrapper.and(w -> w.like("title", keyword)
+                        .or().like("description", keyword)
+                        .or().like("url", keyword));
+            }
+
+            // 域名筛选
+            if (domain != null && !domain.isEmpty()) {
+                wrapper.like("url", domain);
+            }
+
+            // 分类筛选
+            if (categoryId != null) {
+                wrapper.eq("category_id", categoryId);
+            }
+
+            // 日期范围筛选
+            if (startDate != null && !startDate.isEmpty()) {
+                wrapper.ge("create_time", startDate + " 00:00:00");
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                wrapper.le("create_time", endDate + " 23:59:59");
+            }
+
+            // 链接状态筛选
+            if (linkStatus != null) {
+                wrapper.eq("link_status", linkStatus);
+            }
+
+            // 排序：置顶优先，然后按创建时间
+            wrapper.orderByDesc("is_pinned");
+            wrapper.orderByDesc("create_time");
+
+            return bookmarkMapper.selectPage(pageParam, wrapper);
+        } catch (Exception e) {
+            log.error("高级搜索失败: {}", e.getMessage(), e);
+            throw new RuntimeException("搜索失败");
+        }
+    }
+
+    @Override
+    public List<Bookmark> getDeadLinks() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            return bookmarkMapper.selectList(
+                    new QueryWrapper<Bookmark>()
+                            .eq("user_id", currentUser.getId())
+                            .eq("status", 1)
+                            .eq("link_status", 2) // 2 = 失效
+                            .orderByDesc("last_check_time"));
+        } catch (Exception e) {
+            log.error("获取失效链接失败: {}", e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 }

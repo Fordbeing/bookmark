@@ -100,6 +100,27 @@
             <span class="w-5 text-center">🗑️</span>
             <span>回收站</span>
           </button>
+          <button 
+            @click="emit('open-advanced-search')"
+            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <span class="w-5 text-center">🔍</span>
+            <span>高级搜索</span>
+          </button>
+          <button 
+            @click="emit('open-analytics')"
+            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <span class="w-5 text-center">📊</span>
+            <span>数据统计</span>
+          </button>
+          <button 
+            @click="emit('open-dead-links')"
+            class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            <span class="w-5 text-center">⚠️</span>
+            <span>失效链接</span>
+          </button>
         </div>
       </div>
 
@@ -146,6 +167,11 @@
             </button>
             <!-- 操作按钮 - 悬停显示 -->
             <div class="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1">
+              <button 
+                @click.stop="handleShareCategory(category)"
+                class="w-6 h-6 flex items-center justify-center rounded-md bg-white/20 hover:bg-white/30 text-white text-xs transition-all"
+                title="分享分类"
+              >🔗</button>
               <button 
                 @click.stop="handleEditCategory(category)"
                 class="w-6 h-6 flex items-center justify-center rounded-md bg-white/20 hover:bg-white/30 text-white text-xs transition-all"
@@ -276,7 +302,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { getCategoryListAPI, updateCategoryAPI, deleteCategoryAPI, updateCategorySortAPI } from '../api/category';
 
-const emit = defineEmits(['open-settings', 'open-profile', 'open-extension', 'open-data-management', 'category-select', 'filter-favorites', 'filter-trash', 'add-category', 'category-deleted']);
+const emit = defineEmits(['open-settings', 'open-profile', 'open-extension', 'open-data-management', 'category-select', 'filter-favorites', 'filter-trash', 'add-category', 'category-deleted', 'open-advanced-search', 'open-analytics', 'open-dead-links', 'share-category']);
 
 // 定义props以接收书签数据
 const props = defineProps({
@@ -434,6 +460,11 @@ watch(() => customColorTo.value, (newVal) => {
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+};
+
+// 分享分类
+const handleShareCategory = (category) => {
+  emit('share-category', category.id, category.name);
 };
 
 // 编辑分类

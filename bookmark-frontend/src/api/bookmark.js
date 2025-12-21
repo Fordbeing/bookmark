@@ -97,3 +97,45 @@ export const permanentDeleteBookmarkAPI = (id) => {
 export const clearTrashAPI = () => {
   return request.delete('/bookmarks/trash/clear');
 };
+
+// ========== 置顶书签相关 API ==========
+
+/**
+ * 置顶书签
+ * @param {Number} id - 书签ID
+ */
+export const pinBookmarkAPI = (id) => {
+  return request.put(`/bookmarks/${id}/pin`);
+};
+
+/**
+ * 取消置顶
+ * @param {Number} id - 书签ID
+ */
+export const unpinBookmarkAPI = (id) => {
+  return request.put(`/bookmarks/${id}/unpin`);
+};
+
+/**
+ * 获取置顶书签列表
+ */
+export const getPinnedBookmarksAPI = () => {
+  return request.get('/bookmarks/pinned');
+};
+
+// ========== 高级搜索相关 API ==========
+
+/**
+ * 高级搜索
+ * @param {Object} params - {keyword, domain, categoryId, startDate, endDate, linkStatus, page, size}
+ */
+export const advancedSearchAPI = (params) => {
+  return request.get('/bookmarks/advanced-search', { params });
+};
+
+/**
+ * 获取失效链接列表
+ */
+export const getDeadLinksAPI = () => {
+  return request.get('/bookmarks/dead-links');
+};

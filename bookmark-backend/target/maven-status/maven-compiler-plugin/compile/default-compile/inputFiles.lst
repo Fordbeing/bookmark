@@ -17,8 +17,11 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\SystemC
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\SystemConfig.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\DataManagementService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\DataManagementController.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\SharedCategoryService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\ActivationExpiryTask.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\LinkHealthCheckService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\TokenService.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\ShareController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\Category.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\request\WxLoginRequest.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\BookmarkController.java
@@ -30,8 +33,11 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\CorsConf
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AdminUserController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\exception\GlobalExceptionHandler.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\BookmarkService.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\UserAnalyticsController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\AnnouncementService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\ActivationCodeController.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\LinkHealthController.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\PublicShareController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\MyMetaObjectHandler.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\WxAuthService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\OperationLogArchiveTask.java
@@ -60,6 +66,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\response\Pa
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\security\JwtAuthenticationFilter.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\UrlMetadataService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\AdminLogService.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\SharedCategoryMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\Bookmark.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\CategoryMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\PasswordValidator.java
@@ -74,6 +81,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\Activati
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AdminDashboardController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\UserService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\UserActivationMapper.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\SharedCategory.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\AdminLogMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\impl\CategoryServiceImpl.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\request\CategoryRequest.java

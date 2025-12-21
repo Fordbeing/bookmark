@@ -133,6 +133,52 @@
         </div>
       </el-tab-pane>
 
+      <!-- 我的分享 -->
+      <el-tab-pane label="🔗 我的分享" name="shares">
+        <div class="space-y-4">
+          <div class="text-sm text-gray-600 mb-4">
+            管理您分享的分类链接，可以查看访问次数或取消分享。
+          </div>
+          
+          <div v-if="shareLoading" class="text-center py-8">
+            <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+            <p class="text-gray-500 mt-2">加载中...</p>
+          </div>
+          
+          <div v-else-if="myShares.length > 0" class="space-y-3">
+            <div 
+              v-for="share in myShares" 
+              :key="share.id" 
+              class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border"
+            >
+              <div class="flex-1">
+                <div class="font-medium text-gray-800 mb-1">
+                  📁 分类ID: {{ share.categoryId }}
+                </div>
+                <div class="text-sm text-gray-500 mb-2">
+                  分享码: <code class="bg-gray-200 px-2 py-0.5 rounded">{{ share.shareCode }}</code>
+                </div>
+                <div class="flex gap-4 text-xs text-gray-500">
+                  <span>👁️ 访问 {{ share.viewCount || 0 }} 次</span>
+                  <span>🔒 {{ share.password ? '有密码' : '无密码' }}</span>
+                  <span>⏰ {{ share.expireTime ? formatExpireTime(share.expireTime) : '永久有效' }}</span>
+                </div>
+              </div>
+              <div class="flex gap-2 ml-4">
+                <el-button size="small" @click="copyShareLink(share)">复制链接</el-button>
+                <el-button size="small" type="danger" @click="cancelShare(share)">取消分享</el-button>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="text-center py-12 text-gray-500">
+            <div class="text-4xl mb-3">📭</div>
+            <p>暂无分享记录</p>
+            <p class="text-sm mt-1">在侧边栏的分类上悬停，点击🔗按钮可创建分享</p>
+          </div>
+        </div>
+      </el-tab-pane>
+
       <!-- 关于 -->
       <el-tab-pane label="ℹ️ 关于" name="about">
         <div class="about-container">
@@ -217,9 +263,10 @@
 <script setup>
 import { ref, reactive, watch, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Link, ChatDotRound } from '@element-plus/icons-vue';
+import { Link, ChatDotRound, Loading } from '@element-plus/icons-vue';
 import { getTagListAPI, createTagAPI, updateTagAPI, deleteTagAPI } from '../api/tag';
 import { getSettingsAPI, updateSettingsAPI } from '../api/settings';
+import { getMySharesAPI, cancelShareAPI } from '../api/share';
 
 const props = defineProps({
   modelValue: Boolean,
@@ -233,6 +280,10 @@ const newTagName = ref('');
 const newTagColor = ref('#6b7280');
 const tags = ref([]);
 const tagLoading = ref(false);
+
+// 分享管理相关
+const myShares = ref([]);
+const shareLoading = ref(false);
 
 // 轮播相关
 const currentSlide = ref(0);
@@ -384,6 +435,66 @@ const removeTag = async (id) => {
   }
 };
 
+// ========== 分享管理相关 ==========
+
+// 加载我的分享列表
+const loadShares = async () => {
+  shareLoading.value = true;
+  try {
+    const result = await getMySharesAPI();
+    if (result.data) {
+      myShares.value = result.data;
+    }
+  } catch (error) {
+    console.error('加载分享列表失败:', error);
+  } finally {
+    shareLoading.value = false;
+  }
+};
+
+// 取消分享
+const cancelShare = async (share) => {
+  try {
+    await ElMessageBox.confirm('确定要取消这个分享吗？取消后链接将失效。', '提示', {
+      confirmButtonText: '确定取消',
+      cancelButtonText: '返回',
+      type: 'warning'
+    });
+    await cancelShareAPI(share.id);
+    ElMessage.success('分享已取消');
+    await loadShares();
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消分享失败:', error);
+    }
+  }
+};
+
+// 复制分享链接
+const copyShareLink = async (share) => {
+  const url = window.location.origin + '/public/share/' + share.shareCode;
+  try {
+    await navigator.clipboard.writeText(url);
+    ElMessage.success('链接已复制');
+  } catch (error) {
+    // 降级方案
+    const textarea = document.createElement('textarea');
+    textarea.value = url;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    ElMessage.success('链接已复制');
+  }
+};
+
+// 格式化过期时间
+const formatExpireTime = (time) => {
+  if (!time) return '';
+  const date = new Date(time);
+  return date.toLocaleDateString('zh-CN');
+};
+
 // 导出数据
 const exportData = async () => {
   exportLoading.value = true;
@@ -509,6 +620,14 @@ watch(visible, (val) => {
   if (val) {
     loadSettings();
     loadTags();
+    loadShares(); // 加载分享列表
+  }
+});
+
+// 监听Tab切换，按需加载分享列表
+watch(activeTab, (val) => {
+  if (val === 'shares') {
+    loadShares();
   }
 });
 
