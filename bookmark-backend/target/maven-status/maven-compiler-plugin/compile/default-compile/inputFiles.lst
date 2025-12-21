@@ -30,6 +30,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\Announce
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\SearchService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AdminLogController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\CorsConfig.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\SharedBookmarks.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AdminUserController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\exception\GlobalExceptionHandler.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\BookmarkService.java
@@ -59,6 +60,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\UserSett
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\ActivationCode.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\TagMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\request\BindPhoneRequest.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\SharedBookmarksMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\LoginLockService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\SearchController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AnnouncementController.java
@@ -74,6 +76,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\Categor
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\security\UserDetailsServiceImpl.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\BookmarkSearchRepository.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\ElasticsearchSyncTask.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\SharedBookmarksService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\SecurityConfig.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\TagController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\BookmarkDocument.java

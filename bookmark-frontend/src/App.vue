@@ -92,6 +92,14 @@
                   >
                     删除选中 ({{ selectedIds.length }})
                   </el-button>
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    :disabled="selectedIds.length === 0"
+                    @click="openBatchShareModal"
+                  >
+                    分享选中 ({{ selectedIds.length }})
+                  </el-button>
                   <el-button size="small" @click="exitBatchMode">取消</el-button>
                 </template>
               </template>
@@ -391,6 +399,14 @@
         :categoryId="sharingCategoryId"
         :categoryName="sharingCategoryName"
       />
+
+      <!-- 批量分享弹窗 -->
+      <BatchShareModal 
+        v-model="isBatchShareModalVisible"
+        :bookmarkIds="selectedIds"
+        :selectedBookmarks="selectedBookmarksData"
+        @shared="handleBatchShareSuccess"
+      />
     </div>
   </div>
 </template>
@@ -428,6 +444,7 @@ import AdvancedSearchDrawer from "./components/AdvancedSearchDrawer.vue";
 import AnalyticsDrawer from "./components/AnalyticsDrawer.vue";
 import DeadLinksDrawer from "./components/DeadLinksDrawer.vue";
 import ShareModal from "./components/ShareModal.vue";
+import BatchShareModal from "./components/BatchShareModal.vue";
 
 const currentPage = ref('main'); // 'main' 或 'auth'
 const sidebarRef = ref(null);
@@ -449,6 +466,7 @@ const isDeadLinksVisible = ref(false);
 const isShareModalVisible = ref(false);
 const sharingCategoryId = ref(null);
 const sharingCategoryName = ref('');
+const isBatchShareModalVisible = ref(false);
 const editingBookmark = ref(null);
 
 // 显示设置
@@ -666,6 +684,24 @@ const openShareModal = (categoryId, categoryName) => {
   sharingCategoryId.value = categoryId;
   sharingCategoryName.value = categoryName;
   isShareModalVisible.value = true;
+};
+
+// 批量分享相关
+const selectedBookmarksData = computed(() => {
+  return filteredBookmarks.value.filter(b => selectedIds.value.includes(b.id));
+});
+
+const openBatchShareModal = () => {
+  if (selectedIds.value.length === 0) {
+    ElMessage.warning('请先选择要分享的书签');
+    return;
+  }
+  isBatchShareModalVisible.value = true;
+};
+
+const handleBatchShareSuccess = () => {
+  ElMessage.success('批量分享成功');
+  exitBatchMode();
 };
 
 // 数据变更后刷新列表
@@ -947,23 +983,47 @@ const loadSavedSettings = async () => {
 };
 
 const copyUrl = (url) => {
-  // 使用现代 API 复制到剪贴板
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('链接已复制到剪贴板');
-  }).catch((err) => {
-    // 降级方案：使用旧的 API
+  // 复制函数 - 同时尝试新旧API以确保兼容性
+  const fallbackCopy = () => {
     const textarea = document.createElement('textarea');
     textarea.value = url;
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
     try {
-      document.execCommand('copy');
-      ElMessage.success('链接已复制到剪贴板');
+      const successful = document.execCommand('copy');
+      if (successful) {
+        ElMessage.success('链接已复制到剪贴板');
+      } else {
+        ElMessage.error('复制失败，请手动复制');
+      }
     } catch (err) {
-      ElMessage.error('复制失败，请重试');
+      ElMessage.error('复制失败，请手动复制');
     }
     document.body.removeChild(textarea);
-  });
+  };
+
+  // 优先尝试现代 Clipboard API，如果不支持则使用降级方案
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(() => {
+      ElMessage.success('链接已复制到剪贴板');
+    }).catch(() => {
+      fallbackCopy();
+    });
+  } else {
+    // HTTP 环境下直接使用降级方案
+    fallbackCopy();
+  }
 };
 
 const deleteBookmark = (id) => {

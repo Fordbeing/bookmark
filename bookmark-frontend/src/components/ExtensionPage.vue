@@ -183,19 +183,34 @@ const copyText = (text) => {
   navigator.clipboard.writeText(text).then(() => {
     ElMessage.success('已复制');
   }).catch(() => {
-    ElMessage.error('复制失败');
+    // 降级方案：使用旧 API
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      ElMessage.success('已复制');
+    } catch (e) {
+      ElMessage.error('复制失败，请手动复制');
+    }
+    document.body.removeChild(textarea);
   });
 };
 
 // 打开扩展管理页面
 const openExtensionPage = (browser) => {
   const url = browser === 'chrome' ? 'chrome://extensions/' : 'edge://extensions/';
-  // 先复制到剪贴板，因为浏览器安全限制可能阻止直接打开
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.info('已复制地址，请粘贴到浏览器地址栏打开');
+  // 复制到剪贴板
+  copyText(url);
+  // 由于浏览器安全限制，无法直接打开 chrome:// 或 edge:// 协议
+  ElMessage({
+    message: '由于浏览器安全限制，无法自动打开。地址已复制，请手动粘贴到地址栏打开。',
+    type: 'warning',
+    duration: 5000
   });
-  // 尝试打开（可能被浏览器阻止）
-  window.open(url, '_blank');
 };
 </script>
 
