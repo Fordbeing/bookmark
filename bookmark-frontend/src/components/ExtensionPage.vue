@@ -180,24 +180,47 @@ const downloadExtension = () => {
 };
 
 const copyText = (text) => {
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制');
-  }).catch(() => {
-    // 降级方案：使用旧 API
+  // 降级方案：使用 textarea 复制
+  const fallbackCopy = () => {
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
     try {
-      document.execCommand('copy');
-      ElMessage.success('已复制');
+      const successful = document.execCommand('copy');
+      if (successful) {
+        ElMessage.success('已复制');
+      } else {
+        ElMessage.error('复制失败，请手动复制');
+      }
     } catch (e) {
       ElMessage.error('复制失败，请手动复制');
     }
     document.body.removeChild(textarea);
-  });
+  };
+
+  // 优先尝试现代 Clipboard API，如果不支持则使用降级方案
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      ElMessage.success('已复制');
+    }).catch(() => {
+      fallbackCopy();
+    });
+  } else {
+    // HTTP 环境下直接使用降级方案
+    fallbackCopy();
+  }
 };
 
 // 打开扩展管理页面

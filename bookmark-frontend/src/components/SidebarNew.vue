@@ -318,6 +318,11 @@ const props = defineProps({
   allBookmarksCount: {
     type: Number,
     default: 0
+  },
+  // 当前过滤类型（用于判断是否可以使用 bookmarks.length 作为回退）
+  currentFilterType: {
+    type: String,
+    default: 'all'
   }
 });
 
@@ -333,8 +338,39 @@ const categoryExpanded = ref(true);
 const quickActionsExpanded = ref(true);
 const otherExpanded = ref(false);
 
-// 计算总书签数（使用传入的全部总数，不受过滤影响）
-const totalBookmarks = computed(() => props.allBookmarksCount || props.bookmarks.length);
+// 使用缓存来保存统计值，避免响应式时序问题导致显示 0
+const cachedBookmarkCount = ref(0);
+
+// 监听 allBookmarksCount 变化，只有 > 0 时才更新缓存
+watch(() => props.allBookmarksCount, (newVal) => {
+  if (newVal > 0) {
+    cachedBookmarkCount.value = newVal;
+  }
+}, { immediate: true });
+
+// 监听 bookmarks 长度变化，当处于 'all' 模式时更新缓存
+watch(() => props.bookmarks.length, (newLen) => {
+  if (props.currentFilterType === 'all' && newLen > 0) {
+    cachedBookmarkCount.value = newLen;
+  }
+}, { immediate: true });
+
+// 计算总书签数（使用缓存值，确保不会因为临时状态变为0）
+const totalBookmarks = computed(() => {
+  // 如果 allBookmarksCount 有值，优先使用
+  if (props.allBookmarksCount > 0) {
+    return props.allBookmarksCount;
+  }
+  // 否则使用缓存值
+  if (cachedBookmarkCount.value > 0) {
+    return cachedBookmarkCount.value;
+  }
+  // 最后回退到当前 bookmarks 长度（仅在 'all' 模式）
+  if (props.currentFilterType === 'all') {
+    return props.bookmarks.length;
+  }
+  return 0;
+});
 
 // 计算分类数量
 const categoryCount = computed(() => categories.value.length);

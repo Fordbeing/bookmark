@@ -5,6 +5,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\SystemCo
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\impl\BookmarkServiceImpl.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\AdminLog.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\security\JwtTokenProvider.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\LoginHistory.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\response\LoginResponse.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\UserActivation.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\response\ImportResponse.java
@@ -42,6 +43,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\Publ
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\MyMetaObjectHandler.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\WxAuthService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\OperationLogArchiveTask.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\LoginHistoryService.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\controller\AuthController.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\response\ExportResponse.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\config\ApplicationStartupRunner.java
@@ -54,6 +56,7 @@ D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\service\impl\Us
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\request\LoginRequest.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\BookmarkMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\entity\Announcement.java
+D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\LoginHistoryMapper.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\BookmarkApplication.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\dto\request\RegisterRequest.java
 D:\bookmark\bookmark\bookmark-backend\src\main\java\com\bookmark\mapper\UserSettingsMapper.java

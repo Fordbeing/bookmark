@@ -25,6 +25,7 @@
       :bookmarks="bookmarks"
       :showStats="showStats"
       :allBookmarksCount="allBookmarksCount"
+      :currentFilterType="currentFilter.type"
     />
     <div class="flex-1 transition-all duration-300 ease-in-out" :style="{ marginLeft: sidebarMargin }">
       <Navbar @toggle-settings="isSettingsVisible = true" @open-profile="handleProfileClick" @search-results="handleSearchResults" />
@@ -198,24 +199,34 @@
                 <el-tag v-for="tag in parseTags(item.tags)" :key="tag" size="small" type="info" effect="plain" round class="!text-xs">{{ tag }}</el-tag>
               </div>
               <!-- 底部：时间和操作按钮 -->
-              <div class="flex justify-between items-center text-xs text-gray-400 border-t pt-3 mt-auto">
-                <div class="flex items-center gap-2">
-                  <span class="flex items-center gap-1"><el-icon><Clock /></el-icon>{{ formatDate(item.createTime) }}</span>
-                  <span v-if="item.visitCount" class="flex items-center gap-1">👁 {{ item.visitCount }}</span>
+              <div class="flex justify-between items-center border-t pt-3 mt-auto">
+                <!-- 左侧：时间和访问信息 -->
+                <div class="flex items-center gap-3 text-xs text-gray-400">
+                  <span class="flex items-center gap-1" title="创建时间">
+                    <el-icon class="text-gray-300"><Clock /></el-icon>
+                    <span>{{ formatDate(item.createTime) }}</span>
+                  </span>
+                  <span v-if="item.visitCount" class="flex items-center gap-1" title="访问次数">
+                    <span class="text-gray-300">👁</span>
+                    <span>{{ item.visitCount }}</span>
+                  </span>
                 </div>
-                <div class="flex gap-1">
+                <!-- 右侧：操作按钮 -->
+                <div class="flex gap-1.5">
                   <el-button 
                     :type="item.isPinned === 1 ? 'warning' : 'default'" 
                     size="small" 
-                    plain 
+                    :plain="item.isPinned !== 1"
+                    circle
                     @click.stop="togglePinBookmark(item)"
                     :title="item.isPinned === 1 ? '取消置顶' : '置顶'"
+                    class="!w-7 !h-7 !p-0"
                   >
                     {{ item.isPinned === 1 ? '📌' : '📍' }}
                   </el-button>
-                  <el-button type="primary" size="small" plain @click.stop="copyUrl(item.url)">复制</el-button>
-                  <el-button size="small" @click.stop="editBookmark(item)">编辑</el-button>
-                  <el-button type="danger" size="small" plain @click.stop="deleteBookmark(item.id)">删除</el-button>
+                  <el-button type="primary" size="small" plain @click.stop="copyUrl(item.url)" class="!px-2.5">复制</el-button>
+                  <el-button size="small" @click.stop="editBookmark(item)" class="!px-2.5">编辑</el-button>
+                  <el-button type="danger" size="small" plain @click.stop="deleteBookmark(item.id)" class="!px-2.5">删除</el-button>
                 </div>
               </div>
             </div>
@@ -356,6 +367,9 @@
         v-model="isProfileVisible"
         :bookmarks="bookmarks"
         :categories="categories"
+        :allBookmarksCount="allBookmarksCount"
+        :allCategoriesCount="allCategoriesCount"
+        :allFavoritesCount="allFavoritesCount"
         @logout="handleLogout"
       />
 
@@ -510,7 +524,9 @@ const pageSize = ref(50);
 const hasMore = ref(true);
 const loadingMore = ref(false);
 const totalBookmarks = ref(0);
-const allBookmarksCount = ref(0); // 全部书签总数（不受过滤影响，用于侧边栏统计）
+const allBookmarksCount = ref(0); // 全部书签总数（不受过滤影响，用于侧边栏和个人中心统计）
+const allCategoriesCount = ref(0); // 全部分类总数
+const allFavoritesCount = ref(0); // 全部收藏总数
 
 // 过滤和排序书签
 const filteredBookmarks = computed(() => {
@@ -776,12 +792,10 @@ const fetchList = async (reset = true) => {
       // 判断是否还有更多数据
       hasMore.value = bookmarks.value.length < totalBookmarks.value;
       
-      // 当加载全部书签（非过滤状态）时，更新总数统计
-      if (currentFilter.value.type === 'all' && reset) {
-        allBookmarksCount.value = totalBookmarks.value;
-      }
+      // 注意：allBookmarksCount 只在初始化时设置一次（在下面的 if 块中）
+      // 不再在这里更新，避免切换分类后统计数据被意外覆盖
     }
-    // 同时加载分类列表
+    // 同时加载分类列表（仅在 reset 时）
     if (reset) {
       const categoryResult = await getCategoryListAPI();
       if (categoryResult.data) {
@@ -793,6 +807,31 @@ const fetchList = async (reset = true) => {
   } finally {
     initLoading.value = false;
     loadingMore.value = false;
+  }
+};
+
+// 独立的全局统计数据获取函数（只在初始化时调用一次）
+const fetchGlobalStats = async () => {
+  try {
+    // 获取全部书签总数
+    const allResult = await getBookmarkListAPI({ page: 1, size: 1 });
+    if (allResult.data) {
+      allBookmarksCount.value = allResult.data.total || 0;
+    }
+    
+    // 获取全部分类数量
+    const categoryResult = await getCategoryListAPI();
+    if (categoryResult.data) {
+      allCategoriesCount.value = categoryResult.data.length;
+    }
+    
+    // 获取收藏数量
+    const favResult = await getBookmarkListAPI({ page: 1, size: 1, isFavorite: 1 });
+    if (favResult.data) {
+      allFavoritesCount.value = favResult.data.total || 0;
+    }
+  } catch (e) {
+    console.error('获取全局统计失败:', e);
   }
 };
 
@@ -1117,6 +1156,8 @@ const handleLoginSuccess = (userData) => {
   ElMessage.success('欢迎 ' + userData.username);
   // 加载书签列表和分类
   fetchList();
+  // 加载全局统计数据
+  fetchGlobalStats();
   // 加载侧边栏分类
   if (sidebarRef.value) {
     sidebarRef.value.loadCategories();
@@ -1147,8 +1188,9 @@ onMounted(() => {
     // 未登录，跳转到登录页
     currentPage.value = 'auth';
   } else {
-    // 已登录，加载书签列表
+    // 已登录，加载书签列表和全局统计
     fetchList();
+    fetchGlobalStats();
   }
   
   // 添加滚动监听器（无限滚动）

@@ -7,6 +7,7 @@ import com.bookmark.entity.*;
 import com.bookmark.mapper.*;
 import com.bookmark.service.ActivationCodeService;
 import com.bookmark.service.AdminLogService;
+import com.bookmark.service.LoginHistoryService;
 import com.bookmark.service.TokenService;
 import com.bookmark.service.UserService;
 import com.bookmark.util.Result;
@@ -41,6 +42,9 @@ public class AdminUserController {
     private TagMapper tagMapper;
 
     @Autowired
+    private ActivationCodeMapper activationCodeMapper;
+
+    @Autowired
     private ActivationCodeService activationCodeService;
 
     @Autowired
@@ -48,6 +52,9 @@ public class AdminUserController {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private LoginHistoryService loginHistoryService;
 
     /**
      * 获取用户列表
@@ -246,16 +253,56 @@ public class AdminUserController {
     }
 
     /**
-     * 获取用户激活记录
+     * 获取用户激活记录（包含激活码）
      */
     @GetMapping("/{id}/activations")
-    public Result<List<UserActivation>> getUserActivations(@PathVariable Long id) {
+    public Result<List<Map<String, Object>>> getUserActivations(@PathVariable Long id) {
         User currentUser = userService.getCurrentUser();
         if (currentUser == null || currentUser.getIsAdmin() != 1) {
             return Result.error("无管理员权限");
         }
 
         List<UserActivation> activations = activationCodeService.getUserActivations(id);
-        return Result.success(activations);
+
+        // 转换为包含激活码字符串的 Map 列表
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (UserActivation activation : activations) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", activation.getId());
+            item.put("extraBookmarks", activation.getExtraBookmarks());
+            item.put("extraCategories", activation.getExtraCategories());
+            item.put("expireTime", activation.getExpireTime());
+            item.put("status", activation.getStatus());
+            item.put("createTime", activation.getCreateTime());
+
+            // 获取激活码字符串
+            if (activation.getCodeId() != null) {
+                ActivationCode code = activationCodeMapper.selectById(activation.getCodeId());
+                item.put("code", code != null ? code.getCode() : "N/A");
+            } else {
+                item.put("code", "N/A");
+            }
+            result.add(item);
+        }
+
+        return Result.success(result);
+    }
+
+    /**
+     * 获取用户登录历史
+     */
+    @GetMapping("/{id}/login-history")
+    public Result<Map<String, Object>> getLoginHistory(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null || currentUser.getIsAdmin() != 1) {
+            return Result.error("无管理员权限");
+        }
+
+        Map<String, Object> result = loginHistoryService.getLoginHistory(id, page, size);
+        return Result.success(result);
     }
 }

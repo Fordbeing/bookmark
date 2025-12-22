@@ -12,6 +12,7 @@ import com.bookmark.service.SystemConfigService;
 import com.bookmark.service.TokenService;
 import com.bookmark.service.UserService;
 import com.bookmark.service.WxAuthService;
+import com.bookmark.service.LoginHistoryService;
 import com.bookmark.util.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -46,6 +47,9 @@ public class AuthController {
     @Autowired
     private AdminLogService adminLogService;
 
+    @Autowired
+    private LoginHistoryService loginHistoryService;
+
     @PostMapping("/register")
     public Result<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         LoginResponse response = userService.register(request);
@@ -53,7 +57,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         // 检查系统是否允许登录
         if (!systemConfigService.isLoginAllowed()) {
             return Result.error("系统当前不允许登录，请联系管理员");
@@ -65,8 +69,16 @@ public class AuthController {
             return Result.error("系统维护中：" + msg);
         }
 
-        LoginResponse response = userService.login(request);
-        return Result.success("登录成功", response);
+        try {
+            LoginResponse response = userService.login(request);
+            // 记录登录成功
+            loginHistoryService.recordLogin(response.getId(), httpRequest, true, null);
+            return Result.success("登录成功", response);
+        } catch (Exception e) {
+            // 登录失败时也记录（但无法获取用户ID）
+            log.error("登录失败: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**

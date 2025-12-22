@@ -83,16 +83,42 @@
         <div class="tab-content">
           <!-- 用户书签 -->
           <div v-if="activeTab === 'bookmarks'" class="bookmarks-tab">
-            <div v-if="bookmarks.length > 0" class="bookmark-list">
-              <div v-for="bookmark in bookmarks" :key="bookmark.id" class="bookmark-item">
-                <img :src="bookmark.iconUrl || '/favicon.ico'" class="bookmark-icon" @error="handleIconError" />
-                <div class="bookmark-info">
-                  <div class="bookmark-title">{{ bookmark.title }}</div>
-                  <a :href="bookmark.url" target="_blank" class="bookmark-url">{{ bookmark.url }}</a>
-                </div>
-                <div class="bookmark-meta">
-                  {{ formatDate(bookmark.createTime) }}
-                </div>
+            <div class="tab-header">
+              <span class="tab-count">共 {{ bookmarkTotal }} 条书签</span>
+            </div>
+            <div v-if="bookmarks.length > 0" class="table-container">
+              <table class="table table-compact">
+                <thead>
+                  <tr>
+                    <th style="width: 40px">#</th>
+                    <th>标题</th>
+                    <th>链接</th>
+                    <th style="width: 140px">创建时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(bookmark, index) in bookmarks" :key="bookmark.id">
+                    <td class="text-muted">{{ (bookmarkPage - 1) * bookmarkPageSize + index + 1 }}</td>
+                    <td>
+                      <div class="bookmark-title-cell">
+                        <img :src="bookmark.iconUrl || '/favicon.ico'" class="bookmark-icon-sm" @error="handleIconError" />
+                        <span class="bookmark-title-text">{{ bookmark.title || '无标题' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <a :href="bookmark.url" target="_blank" class="bookmark-url-link">{{ truncateUrl(bookmark.url) }}</a>
+                    </td>
+                    <td class="text-muted">{{ formatDate(bookmark.createTime) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- 分页 -->
+              <div class="mini-pagination">
+                <button class="mini-page-btn" :disabled="bookmarkPage === 1" @click="changeBookmarkPage(1)">«</button>
+                <button class="mini-page-btn" :disabled="bookmarkPage === 1" @click="changeBookmarkPage(bookmarkPage - 1)">‹</button>
+                <span class="page-indicator">{{ bookmarkPage }} / {{ bookmarkTotalPages }} (共{{ bookmarkTotal }}条)</span>
+                <button class="mini-page-btn" :disabled="bookmarkPage >= bookmarkTotalPages" @click="changeBookmarkPage(bookmarkPage + 1)">›</button>
+                <button class="mini-page-btn" :disabled="bookmarkPage >= bookmarkTotalPages" @click="changeBookmarkPage(bookmarkTotalPages)">»</button>
               </div>
             </div>
             <div v-else class="empty-state">
@@ -121,8 +147,8 @@
                     <td>+{{ act.extraCategories }}</td>
                     <td>{{ formatDate(act.expireTime) }}</td>
                     <td>
-                      <span :class="act.status === 1 ? 'badge badge-success' : 'badge badge-danger'">
-                        {{ act.status === 1 ? '有效' : '已过期' }}
+                      <span :class="isActivationValid(act) ? 'badge badge-success' : 'badge badge-danger'">
+                        {{ getActivationStatusText(act) }}
                       </span>
                     </td>
                   </tr>
@@ -200,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { userApi } from '@/api/user'
 import ConfirmModal from '@/components/ConfirmModal.vue'
@@ -226,6 +252,10 @@ const userStats = reactive({
 })
 
 const bookmarks = ref([])
+const bookmarkPage = ref(1)
+const bookmarkPageSize = ref(10)
+const bookmarkTotal = ref(0)
+const bookmarkTotalPages = computed(() => Math.ceil(bookmarkTotal.value / bookmarkPageSize.value) || 1)
 const activations = ref([])
 const loginHistory = ref([])
 
@@ -236,6 +266,34 @@ function formatDate(date) {
 
 function handleIconError(e) {
   e.target.src = '/favicon.ico'
+}
+
+function truncateUrl(url) {
+  if (!url) return ''
+  try {
+    const urlObj = new URL(url)
+    const path = urlObj.pathname.length > 30 ? urlObj.pathname.substring(0, 30) + '...' : urlObj.pathname
+    return urlObj.host + path
+  } catch {
+    return url.length > 50 ? url.substring(0, 50) + '...' : url
+  }
+}
+
+// 检查激活记录是否仍然有效
+function isActivationValid(activation) {
+  if (activation.status !== 1) return false
+  if (!activation.expireTime) return true
+  const expireDate = dayjs(activation.expireTime)
+  return expireDate.isAfter(dayjs())
+}
+
+// 获取激活状态文本
+function getActivationStatusText(activation) {
+  if (activation.status !== 1) return '已禁用'
+  if (!activation.expireTime) return '有效'
+  const expireDate = dayjs(activation.expireTime)
+  if (expireDate.isBefore(dayjs())) return '已过期'
+  return '有效'
 }
 
 async function loadUserDetail() {
@@ -280,17 +338,29 @@ async function loadUserDetail() {
 
 async function loadBookmarks() {
   try {
-    const response = await userApi.getBookmarks(route.params.id, { page: 1, size: 20 })
+    console.log('Fetching bookmarks: page=', bookmarkPage.value, 'size=', bookmarkPageSize.value)
+    const response = await userApi.getBookmarks(route.params.id, { page: bookmarkPage.value, size: bookmarkPageSize.value })
+    console.log('Bookmark response:', response)
     if (response.code === 200) {
-      bookmarks.value = response.data.records || response.data || []
+      bookmarks.value = response.data.records || response.data.list || response.data || []
+      bookmarkTotal.value = response.data.total || 0
+      console.log('bookmarkTotal:', bookmarkTotal.value, 'bookmarkTotalPages:', bookmarkTotalPages.value)
     }
   } catch (error) {
+    console.error('Load bookmarks error:', error)
     // 模拟数据
     bookmarks.value = [
       { id: 1, title: 'GitHub', url: 'https://github.com', iconUrl: '', createTime: dayjs().subtract(1, 'day').toISOString() },
       { id: 2, title: 'Google', url: 'https://google.com', iconUrl: '', createTime: dayjs().subtract(2, 'day').toISOString() }
     ]
+    bookmarkTotal.value = 2
   }
+}
+
+function changeBookmarkPage(page) {
+  if (page < 1 || page > bookmarkTotalPages.value) return
+  bookmarkPage.value = page
+  loadBookmarks()
 }
 
 async function loadActivations() {
@@ -539,51 +609,108 @@ onMounted(() => {
   padding: 24px;
 }
 
-/* 书签列表 */
-.bookmark-list {
+/* 标签页头部 */
+.tab-header {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.bookmark-item {
+.tab-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 紧凑表格 */
+.table-compact {
+  font-size: 13px;
+}
+
+.table-compact th,
+.table-compact td {
+  padding: 10px 12px;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* 书签标题单元格 */
+.bookmark-title-cell {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: var(--bg-page);
-  border-radius: var(--radius);
+  gap: 8px;
 }
 
-.bookmark-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+.bookmark-icon-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-.bookmark-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.bookmark-title {
+.bookmark-title-text {
   font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
 }
 
-.bookmark-url {
-  font-size: 13px;
+.bookmark-url-link {
   color: var(--text-muted);
-  text-overflow: ellipsis;
+  font-size: 12px;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+  max-width: 280px;
 }
 
-.bookmark-meta {
+.bookmark-url-link:hover {
+  color: var(--primary);
+}
+
+/* 迷你分页 */
+.mini-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-light);
+  margin-top: 12px;
+}
+
+.mini-page-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.mini-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.mini-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  min-width: 60px;
+  text-align: center;
 }
 
 /* 加载/错误状态 */

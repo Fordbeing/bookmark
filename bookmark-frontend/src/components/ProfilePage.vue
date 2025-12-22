@@ -255,6 +255,21 @@ const props = defineProps({
   categories: {
     type: Array,
     default: () => []
+  },
+  // 全部书签总数（不受过滤影响）
+  allBookmarksCount: {
+    type: Number,
+    default: 0
+  },
+  // 全部分类总数
+  allCategoriesCount: {
+    type: Number,
+    default: 0
+  },
+  // 全部收藏数
+  allFavoritesCount: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -308,12 +323,67 @@ const loadUser = () => {
   }
 };
 
+// 使用缓存来保存统计值，避免响应式时序问题导致显示 0
+const cachedBookmarkCount = ref(0);
+const cachedCategoryCount = ref(0);
+const cachedFavoriteCount = ref(0);
+
+// 监听统计值变化，只有 > 0 时才更新缓存
+watch(() => props.allBookmarksCount, (newVal) => {
+  if (newVal > 0) cachedBookmarkCount.value = newVal;
+}, { immediate: true });
+
+watch(() => props.allCategoriesCount, (newVal) => {
+  if (newVal > 0) cachedCategoryCount.value = newVal;
+}, { immediate: true });
+
+watch(() => props.allFavoritesCount, (newVal) => {
+  if (newVal > 0) cachedFavoriteCount.value = newVal;
+}, { immediate: true });
+
+// 额外监听 bookmarks 和 categories 数组长度，作为备用值
+watch(() => props.bookmarks.length, (newLen) => {
+  if (newLen > 0 && cachedBookmarkCount.value === 0) {
+    cachedBookmarkCount.value = newLen;
+  }
+}, { immediate: true });
+
+watch(() => props.categories.length, (newLen) => {
+  if (newLen > 0 && cachedCategoryCount.value === 0) {
+    cachedCategoryCount.value = newLen;
+  }
+}, { immediate: true });
+
 const stats = computed(() => {
-  return {
-    bookmarkCount: props.bookmarks.length,
-    categoryCount: props.categories.length,
-    favoriteCount: props.bookmarks.filter(b => b.isFavorite === 1).length
-  };
+  // 获取书签数量：优先 props > 缓存 > bookmarks.length
+  let bookmarkCount = 0;
+  if (props.allBookmarksCount > 0) {
+    bookmarkCount = props.allBookmarksCount;
+  } else if (cachedBookmarkCount.value > 0) {
+    bookmarkCount = cachedBookmarkCount.value;
+  } else {
+    bookmarkCount = props.bookmarks.length;
+  }
+  
+  // 获取分类数量
+  let categoryCount = 0;
+  if (props.allCategoriesCount > 0) {
+    categoryCount = props.allCategoriesCount;
+  } else if (cachedCategoryCount.value > 0) {
+    categoryCount = cachedCategoryCount.value;
+  } else {
+    categoryCount = props.categories.length;
+  }
+  
+  // 获取收藏数量
+  let favoriteCount = 0;
+  if (props.allFavoritesCount > 0) {
+    favoriteCount = props.allFavoritesCount;
+  } else if (cachedFavoriteCount.value > 0) {
+    favoriteCount = cachedFavoriteCount.value;
+  }
+  
+  return { bookmarkCount, categoryCount, favoriteCount };
 });
 
 const saveProfile = async () => {
@@ -452,12 +522,47 @@ const loadActivationCodes = async () => {
   }
 };
 
-const copyCode = async (code) => {
-  try {
-    await navigator.clipboard.writeText(code);
-    ElMessage.success('已复制');
-  } catch (error) {
-    ElMessage.error('复制失败');
+const copyCode = (code) => {
+  // 降级方案：使用textarea复制
+  const fallbackCopy = () => {
+    const textarea = document.createElement('textarea');
+    textarea.value = code;
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.width = '2em';
+    textarea.style.height = '2em';
+    textarea.style.padding = '0';
+    textarea.style.border = 'none';
+    textarea.style.outline = 'none';
+    textarea.style.boxShadow = 'none';
+    textarea.style.background = 'transparent';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        ElMessage.success('已复制');
+      } else {
+        ElMessage.error('复制失败，请手动复制');
+      }
+    } catch (err) {
+      ElMessage.error('复制失败，请手动复制');
+    }
+    document.body.removeChild(textarea);
+  };
+
+  // 优先尝试现代 Clipboard API，如果不支持则使用降级方案
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code).then(() => {
+      ElMessage.success('已复制');
+    }).catch(() => {
+      fallbackCopy();
+    });
+  } else {
+    // HTTP 环境下直接使用降级方案
+    fallbackCopy();
   }
 };
 

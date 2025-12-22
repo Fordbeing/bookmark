@@ -35,7 +35,8 @@
       <div class="card-header">
         <h3 class="card-title">用户列表</h3>
         <div class="card-actions">
-          <span class="total-count">共 {{ total }} 条记录</span>
+          <span class="total-badge">{{ total }} 条记录</span>
+          <button class="btn btn-sm btn-secondary" @click="loadUsers" title="刷新">🔄</button>
         </div>
       </div>
       <div class="card-body">
@@ -86,23 +87,26 @@
                 <td>{{ formatDate(user.lastLoginTime) || '-' }}</td>
                 <td>
                   <div class="action-buttons">
-                    <router-link :to="`/users/${user.id}`" class="btn btn-sm btn-secondary">
-                      详情
+                    <router-link :to="`/users/${user.id}`" class="action-btn action-btn-default" title="查看详情">
+                      <span class="action-icon">👁</span>
                     </router-link>
                     <button
-                      class="btn btn-sm"
-                      :class="user.status === 1 ? 'btn-warning' : 'btn-success'"
+                      class="action-btn"
+                      :class="user.status === 1 ? 'action-btn-warning' : 'action-btn-success'"
                       @click="toggleUserStatus(user)"
+                      :title="user.status === 1 ? '禁用用户' : '启用用户'"
                     >
-                      {{ user.status === 1 ? '禁用' : '启用' }}
+                      <span class="action-icon">{{ user.status === 1 ? '🚫' : '✅' }}</span>
                     </button>
                     <button
                       v-if="user.isAdmin !== 1"
-                      class="btn btn-sm btn-secondary"
+                      class="action-btn action-btn-primary"
                       @click="setAdmin(user)"
+                      title="设为管理员"
                     >
-                      设为管理员
+                      <span class="action-icon">👑</span>
                     </button>
+                    <span v-else class="admin-badge">👑</span>
                   </div>
                 </td>
               </tr>
@@ -360,9 +364,13 @@ onMounted(() => {
   min-width: 120px;
 }
 
-.total-count {
+.total-badge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
   font-size: 13px;
-  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .user-info-cell {
@@ -407,16 +415,83 @@ onMounted(() => {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 }
 
-.btn-warning {
-  background: var(--warning);
-  color: white;
+/* 统一的操作按钮样式 */
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
-.btn-warning:hover {
-  background: #d97706;
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.action-btn-default {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.action-btn-default:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.action-btn-warning {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.action-btn-warning:hover {
+  background: #fde68a;
+  border-color: #fbbf24;
+}
+
+.action-btn-success {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+}
+
+.action-btn-success:hover {
+  background: #a7f3d0;
+  border-color: #34d399;
+}
+
+.action-btn-primary {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.action-btn-primary:hover {
+  background: #bfdbfe;
+  border-color: #60a5fa;
+}
+
+.admin-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0.5;
 }
 
 /* 分页容器 */
